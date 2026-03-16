@@ -1,0 +1,221 @@
+.item-detail .detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.item-detail .detail-header .btn {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  transition: color var(--transition), background var(--transition);
+}
+
+.item-detail .detail-header .btn:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.detail-type {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  padding: 6px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detail-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.detail-badge--completed {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.detail-subtask-progress {
+  margin: -8px 0 16px;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.detail-subtasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.detail-subtask {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  margin-bottom: 6px;
+  font-size: 0.9375rem;
+}
+
+.detail-subtask--done {
+  opacity: 0.8;
+}
+
+.detail-subtask--done .detail-subtask-title {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.detail-subtask-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-subtask-ddl {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.detail-subtask-status {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+}
+
+.detail-subtask--done .detail-subtask-status {
+  color: var(--color-primary);
+}
+
+.detail-reflection {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-size: 0.9375rem;
+  color: var(--color-text);
+}
+
+.detail-title {
+  margin: 0 0 20px;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+
+.detail-source {
+  margin: 0 0 14px;
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+}
+
+.detail-content {
+  white-space: pre-wrap;
+  margin-bottom: 20px;
+  line-height: 1.65;
+  font-size: 0.9375rem;
+}
+
+.detail-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 20px;
+  margin: 0 0 24px;
+  font-size: 0.9375rem;
+  padding: 16px;
+  background: var(--color-bg);
+  border-radius: var(--radius);
+}
+
+.detail-meta dt {
+  color: var(--color-text-muted);
+  margin: 0;
+  font-weight: 500;
+}
+
+.detail-meta dd {
+  margin: 0;
+}
+
+.detail-block {
+  margin-bottom: 24px;
+}
+
+.detail-block h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detail-description {
+  white-space: pre-wrap;
+  margin: 0;
+  line-height: 1.65;
+  font-size: 0.9375rem;
+}
+
+.sublist {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.detail-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.detail-attach-img {
+  max-width: 140px;
+  max-height: 140px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.detail-attach-file {
+  padding: 8px 14px;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.detail-attach-file:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.detail-actions .btn.danger {
+  color: #dc2626;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.detail-actions .btn.danger:hover {
+  background: rgba(220, 38, 38, 0.1);
+}

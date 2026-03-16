@@ -1,0 +1,112 @@
+.data-settings {
+  position: relative;
+}
+
+.data-settings-trigger {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  transition: color var(--transition), background var(--transition);
+}
+
+.data-settings-trigger:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.data-settings-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.data-settings-icon svg {
+  display: block;
+}
+
+.data-settings-file-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.data-settings-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  padding: 12px;
+  padding-top: 32px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  z-index: 20;
+}
+
+.data-settings-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition), background var(--transition);
+}
+.data-settings-close:hover {
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+.data-settings-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.data-settings-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+.data-settings-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.data-settings-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.data-settings-message {
+  font-size: 0.8125rem;
+  margin: 10px 0 0;
+  color: var(--color-primary);
+}
+
+.data-settings-message.error {
+  color: #dc2626;
+}

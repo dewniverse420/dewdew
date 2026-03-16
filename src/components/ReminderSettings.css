@@ -1,0 +1,132 @@
+.reminder-settings {
+  position: relative;
+}
+
+.reminder-settings-trigger {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  transition: color var(--transition), background var(--transition);
+}
+
+.reminder-settings-trigger:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.reminder-settings-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reminder-settings-icon svg {
+  display: block;
+}
+
+.reminder-settings-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  padding: 12px;
+  padding-top: 32px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  z-index: 20;
+}
+
+.reminder-settings-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition), background var(--transition);
+}
+
+.reminder-settings-close:hover {
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+.reminder-settings-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.reminder-settings-label--top {
+  margin-top: 14px;
+}
+
+.reminder-settings-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.reminder-settings-unsupported {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.reminder-settings-permission {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 4px;
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.reminder-settings-permission:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.reminder-settings-master {
+  display: flex;
+  gap: 8px;
+}
+
+.reminder-master-btn {
+  flex: 1;
+  justify-content: center;
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.reminder-master-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.reminder-master-btn.active {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}

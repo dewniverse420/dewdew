@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# 避免提交嵌套仓库（项目根在 E:\dewdew，不要提交子目录里的 repo）
+dewdew/
+
+# Build
+dist/
+*.local
+
+# Environment (do not commit secrets)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.log

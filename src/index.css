@@ -1,0 +1,156 @@
+/* 现代简约 · 黑白灰主色 + 高饱和度点缀，主色默认青 */
+:root,
+[data-theme="cyan"] {
+  --color-primary: #0891b2;
+  --color-primary-hover: #0e7490;
+  --color-primary-light: rgba(8, 145, 178, 0.1);
+  --color-accent: #0891b2;
+  --color-accent-light: rgba(8, 145, 178, 0.1);
+}
+
+[data-theme="pink"] {
+  --color-primary: #ec4899;
+  --color-primary-hover: #db2777;
+  --color-primary-light: rgba(236, 72, 153, 0.1);
+  --color-accent: #ec4899;
+  --color-accent-light: rgba(236, 72, 153, 0.1);
+}
+
+[data-theme="blue"] {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: rgba(37, 99, 235, 0.1);
+  --color-accent: #2563eb;
+  --color-accent-light: rgba(37, 99, 235, 0.1);
+}
+
+[data-theme="red"] {
+  --color-primary: #dc2626;
+  --color-primary-hover: #b91c1c;
+  --color-primary-light: rgba(220, 38, 38, 0.1);
+  --color-accent: #dc2626;
+  --color-accent-light: rgba(220, 38, 38, 0.1);
+}
+
+[data-theme="orange"] {
+  --color-primary: #ea580c;
+  --color-primary-hover: #c2410c;
+  --color-primary-light: rgba(234, 88, 12, 0.1);
+  --color-accent: #ea580c;
+  --color-accent-light: rgba(234, 88, 12, 0.1);
+}
+
+[data-theme="black"] {
+  --color-primary: #171717;
+  --color-primary-hover: #0a0a0a;
+  --color-primary-light: rgba(23, 23, 23, 0.1);
+  --color-accent: #171717;
+  --color-accent-light: rgba(23, 23, 23, 0.1);
+}
+
+[data-theme="purple"] {
+  --color-primary: #7c3aed;
+  --color-primary-hover: #6d28d9;
+  --color-primary-light: rgba(124, 58, 237, 0.1);
+  --color-accent: #7c3aed;
+  --color-accent-light: rgba(124, 58, 237, 0.1);
+}
+
+/* 中性主色 + 液态玻璃风格 */
+:root {
+  /* 液态玻璃背景：柔和渐变 */
+  --color-bg: linear-gradient(145deg, #e0e7ff 0%, #f5f3ff 35%, #fef3c7 70%, #fce7f3 100%);
+  /* 纯色背景（用于日历无日期格等，避免渐变） */
+  --color-bg-solid: #f0f0f0;
+  /* 玻璃表面：半透明白 + 毛玻璃（需配合 backdrop-filter） */
+  --color-surface: rgba(255, 255, 255, 0.55);
+  --color-surface-solid: rgba(255, 255, 255, 0.92);
+  --color-text: #1e1b4b;
+  --color-text-muted: #5b5b7a;
+  --color-border: rgba(255, 255, 255, 0.6);
+  --shadow-sm: 0 4px 20px rgba(30, 27, 75, 0.08);
+  --shadow: 0 8px 32px rgba(30, 27, 75, 0.12);
+  --shadow-md: 0 12px 40px rgba(30, 27, 75, 0.16);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 20px;
+  --glass-blur: 12px;
+  --safe-top: env(safe-area-inset-top, 0);
+  --safe-bottom: env(safe-area-inset-bottom, 0);
+  --transition: 0.2s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "Noto Sans SC", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-bg);
+  background-attachment: fixed;
+  color: var(--color-text);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 液态玻璃：半透明 + 模糊，用于顶栏、底栏、弹层等 */
+.glass,
+.app-header,
+.bottom-nav {
+  background: var(--color-surface) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.app-shell {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 64px);
+  min-height: 100vh;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+/* 无障碍：键盘聚焦时显示明显焦点环，鼠标点击不显示 */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input, textarea {
+  font: inherit;
+}
+
+.container {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 12px 16px;
+}
+
+@media (min-width: 641px) {
+  .container {
+    padding: 24px;
+  }
+}

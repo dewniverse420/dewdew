@@ -1,0 +1,86 @@
+.create-contact-page .form-block {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.contact-avatar-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.contact-avatar-preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.contact-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.contact-avatar-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.contact-events-block {
+  margin-top: 8px;
+}
+
+.contact-events-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.contact-event-card {
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--color-border);
+}
+
+.contact-event-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.contact-event-card .field {
+  margin-bottom: 12px;
+}
+
+.contact-event-card .field:last-child {
+  margin-bottom: 0;
+}
+
+.create-contact-page .btn-secondary {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.create-contact-page .form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
