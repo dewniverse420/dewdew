@@ -38,7 +38,6 @@ const isConfigured =
 let app: FirebaseApp | null = null
 let db: ReturnType<typeof getFirestore> | null = null
 let auth: Auth | null = null
-let authReady = false
 
 export function isFirebaseConfigured(): boolean {
   return isConfigured
@@ -95,7 +94,6 @@ export async function initFirebase(): Promise<boolean> {
     auth = getAuth(app)
     const requireLogin = isFirebaseRequireLogin()
     if (!requireLogin && !auth.currentUser) await signInAnonymously(auth)
-    authReady = true
     db = getFirestore(app)
     return true
   } catch {

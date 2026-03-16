@@ -4,7 +4,6 @@ import { useI18n } from '../lib/i18n'
 import { fetchExchangeRate, SUPPORTED_CODES } from '../lib/exchangeRates'
 import { CURRENCIES, CURRENCIES_EN, entryToDisplayAmount, getCategoryKey, getCurrencySymbol } from '../lib/finance'
 import { getFinanceEntries, getFinanceSettings, setFinanceSettings } from '../lib/store'
-import type { FinanceEntry } from '../types'
 import './FinanceView.css'
 
 const CATEGORY_COLORS = [

@@ -39,8 +39,8 @@ export default function CreateFinance() {
   const canFetchRate = !isRefCurrency && SUPPORTED_CODES.has(currency) && SUPPORTED_CODES.has(refCurrency)
 
   useEffect(() => {
-    const keys = type === 'income' ? INCOME_CATEGORY_KEYS : EXPENSE_CATEGORY_KEYS
-    if (category && !keys.includes(category as any)) setCategory(keys[0])
+    const keys: readonly string[] = type === 'income' ? INCOME_CATEGORY_KEYS : EXPENSE_CATEGORY_KEYS
+    if (category && !keys.includes(category)) setCategory(keys[0])
   }, [type])
 
   const fetchRate = async () => {
@@ -62,7 +62,7 @@ export default function CreateFinance() {
     const num = parseFloat(amount.replace(/,/g, ''))
     if (!Number.isFinite(num) || num <= 0) return
     if (!isRefCurrency && (!Number.isFinite(rateToRef) || rateToRef <= 0)) return
-    const c = (category && categoryKeys.includes(category as any)) ? category : categoryKeys[0]
+    const c = (category && (categoryKeys as readonly string[]).includes(category)) ? category : categoryKeys[0]
     const now = new Date().toISOString()
     const list = getFinanceEntries()
     if (editId && existing) {

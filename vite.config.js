@@ -1,24 +1,27 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+var basePath = process.env.VITE_BASE_PATH || '/';
 export default defineConfig({
+    base: basePath,
     plugins: [
         react(),
         VitePWA({
             registerType: 'autoUpdate',
-            includeAssets: ['favicon.svg'],
+            includeAssets: ['favicon.svg', 'logo.png'],
             manifest: {
-                name: '个人助手',
-                short_name: '个人助手',
-                description: '待办、日程、记事与备忘',
+                name: 'Dewdew - 你的私人小秘书',
+                short_name: 'Dewdew',
+                description: '你的私人小秘书，待办、日程、记事与备忘',
                 theme_color: '#2563eb',
                 background_color: '#ffffff',
                 display: 'standalone',
                 orientation: 'portrait-primary',
-                scope: '/',
-                start_url: '/',
+                scope: basePath,
+                start_url: basePath,
                 icons: [
-                    { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }
+                    { src: (basePath === '/' ? '/' : basePath) + 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
+                    { src: (basePath === '/' ? '/' : basePath) + 'logo.png', sizes: '192x192 512x512', type: 'image/png', purpose: 'any maskable' }
                 ]
             },
             workbox: {

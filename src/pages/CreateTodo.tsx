@@ -3,14 +3,14 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
 import { getTodos, setTodos, getGoals } from '../lib/store'
 import { REMINDER_PRESETS } from '../lib/reminder'
-import type { TodoItem, Subtask, Attachment } from '../types'
+import type { TodoItem, Attachment } from '../types'
 import type { Goal } from '../types'
 import TagInput from '../components/TagInput'
 import AttachmentField from '../components/AttachmentField'
 import SubtaskEditModal from '../components/SubtaskEditModal'
 import './CreateTodo.css'
 
-const PRESET_VALUES = new Set(REMINDER_PRESETS.map((p) => p.value))
+const PRESET_VALUES = new Set<number>(REMINDER_PRESETS.map((p) => p.value))
 
 function goalLabel(g: Goal, t: (k: string) => string): string {
   const typeLabel = t(`createGoal.goalType.${g.type}`)
@@ -104,10 +104,10 @@ export default function CreateTodo() {
   const [customMinutesInput, setCustomMinutesInput] = useState('')
 
   const toggleReminder = (minutes: number) => {
-    const set = new Set(reminderMinutes)
-    if (set.has(minutes)) set.delete(minutes)
-    else set.add(minutes)
-    set('reminderBeforeMinutes', Array.from(set).sort((a, b) => a - b))
+    const minuteSet = new Set(reminderMinutes)
+    if (minuteSet.has(minutes)) minuteSet.delete(minutes)
+    else minuteSet.add(minutes)
+    set('reminderBeforeMinutes', Array.from(minuteSet).sort((a, b) => a - b))
   }
 
   const clearReminders = () => {
@@ -117,9 +117,9 @@ export default function CreateTodo() {
   const addCustomReminder = () => {
     const n = parseInt(customMinutesInput, 10)
     if (!Number.isFinite(n) || n <= 0) return
-    const set = new Set(reminderMinutes)
-    set.add(n)
-    set('reminderBeforeMinutes', Array.from(set).sort((a, b) => a - b))
+    const minuteSet = new Set(reminderMinutes)
+    minuteSet.add(n)
+    set('reminderBeforeMinutes', Array.from(minuteSet).sort((a, b) => a - b))
     setCustomMinutesInput('')
   }
 

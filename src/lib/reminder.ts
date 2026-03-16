@@ -122,7 +122,7 @@ function checkBirthdayReminders(lang: 'zh' | 'en'): void {
   for (const c of contacts) {
     const bd = c.birthday?.trim()
     if (!bd || bd.length < 5) continue
-    const [y, m, d] = bd.split('-').map(Number)
+    const [, m, d] = bd.split('-').map(Number)
     if (!m || !d) continue
     const thisYearBday = `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     const dayBefore = new Date(year, m - 1, d - 1)

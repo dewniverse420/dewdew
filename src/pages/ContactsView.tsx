@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
 import { getContacts } from '../lib/store'
-import type { Contact, ContactEvent } from '../types'
+import type { ContactEvent } from '../types'
 import './ContactsView.css'
 
 function formatEventTime(iso: string, locale: string): string {

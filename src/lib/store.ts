@@ -224,7 +224,7 @@ export function importBackup(data: unknown): { ok: true } | { ok: false; error: 
     const goals = Array.isArray(d.goals) ? d.goals : []
     const quicknotes = Array.isArray(d.quicknotes) ? d.quicknotes : []
     const financeRaw = Array.isArray((d as any).finance) ? (d as any).finance : []
-    const finance: FinanceEntry[] = financeRaw.map(normalizeFinanceEntry).filter((e): e is FinanceEntry => e != null)
+    const finance: FinanceEntry[] = financeRaw.map(normalizeFinanceEntry).filter((e: FinanceEntry | null): e is FinanceEntry => e != null)
     const contacts = Array.isArray((d as any).contacts) ? (d as any).contacts : []
     setTodos(todos)
     setGoals(goals)

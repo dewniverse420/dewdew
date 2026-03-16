@@ -41,7 +41,7 @@ import './pages/ContactDetail.css'
 
 const SpeechRecognitionAPI =
   typeof window !== 'undefined' &&
-  (window.SpeechRecognition || (window as any).webkitSpeechRecognition)
+  (window.SpeechRecognition || window.webkitSpeechRecognition)
 
 function App() {
   const { t, lang } = useI18n()
@@ -121,7 +121,8 @@ function App() {
       alert(t('ocr.voiceUnsupported'))
       return
     }
-    const Recognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!Recognition) return
     const recognition = new Recognition()
     recognition.lang = lang === 'zh' ? 'zh-CN' : 'en-US'
     recognition.continuous = false
