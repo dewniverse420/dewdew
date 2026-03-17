@@ -35,14 +35,14 @@
   min-width: 180px;
   padding: 12px;
   padding-top: 32px;
-  background: var(--color-surface);
+  background: #fff;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
   z-index: 20;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .theme-settings-panel {
     position: fixed;
     left: 50%;
@@ -50,8 +50,10 @@
     right: auto;
     transform: translate(-50%, -50%);
     min-width: 0;
-    width: calc(100vw - 24px);
+    width: calc(100vw - 32px);
     max-width: 280px;
+    margin-top: env(safe-area-inset-top);
+    box-sizing: border-box;
   }
 }
 

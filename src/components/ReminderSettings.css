@@ -35,14 +35,14 @@
   min-width: 220px;
   padding: 12px;
   padding-top: 32px;
-  background: var(--color-surface);
+  background: #fff;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
   z-index: 20;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .reminder-settings-panel {
     position: fixed;
     left: 50%;
@@ -50,11 +50,16 @@
     right: auto;
     transform: translate(-50%, -50%);
     min-width: 0;
-    width: calc(100vw - 24px);
+    width: calc(100vw - 32px);
     max-width: 320px;
-    max-height: min(85vh, 80dvh);
+    max-height: min(80vh, 75dvh);
     overflow-y: auto;
     padding-top: 32px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    margin-top: env(safe-area-inset-top);
+    box-sizing: border-box;
   }
 }
 
