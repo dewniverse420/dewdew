@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
-import { getContacts } from '../lib/store'
+import { getContacts, setContacts } from '../lib/store'
 import './ContactDetail.css'
 
 export default function ContactDetail() {
@@ -16,14 +16,23 @@ export default function ContactDetail() {
     return null
   }
 
+  const remove = () => {
+    if (!window.confirm(t('contact.deleteConfirm'))) return
+    setContacts(contacts.filter((c) => c.id !== id))
+    navigate('/contacts')
+  }
+
   const dash = '—'
 
   return (
     <section className="page contact-detail-page">
       <div className="contact-detail-header">
-        <button type="button" className="btn" onClick={() => navigate(-1)}>{t('detail.back')}</button>
-        <button type="button" className="btn btn-primary" onClick={() => navigate(`/edit/contact/${id}`)}>
+        <button type="button" className="btn" onClick={() => navigate('/contacts')}>{t('detail.back')}</button>
+        <button type="button" className="btn" onClick={() => navigate(`/edit/contact/${id}`)}>
           {t('detail.edit')}
+        </button>
+        <button type="button" className="btn danger" onClick={remove}>
+          {t('detail.delete')}
         </button>
       </div>
       <div className="contact-detail-hero">

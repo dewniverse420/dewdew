@@ -97,6 +97,14 @@ export default function CreateFinance() {
     }
   }
 
+  const remove = () => {
+    if (!editId || !existing) return
+    if (!window.confirm(t('finance.deleteConfirm'))) return
+    const list = getFinanceEntries()
+    setFinanceEntries(list.filter((e) => e.id !== editId))
+    navigate('/finance')
+  }
+
   return (
     <section className="page create-finance-page">
       <div className="page-heading-row">
@@ -213,6 +221,9 @@ export default function CreateFinance() {
           />
         </label>
         <div className="form-actions">
+          {existing && (
+            <button type="button" className="btn danger" onClick={remove}>{t('detail.delete')}</button>
+          )}
           <button type="button" className="btn" onClick={() => navigate(-1)}>{t('common.cancel')}</button>
           <button type="submit" className="btn btn-primary">{t('common.save')}</button>
         </div>

@@ -38,6 +38,7 @@ export default function ItemDetail() {
           : goal.title
       : t('detail.dash')
     const remove = () => {
+      if (!window.confirm(t('todo.deleteConfirm'))) return
       setTodos(todos.filter((todo) => todo.id !== id))
       navigate('/todos')
     }
@@ -157,6 +158,7 @@ export default function ItemDetail() {
     return null
   }
   const remove = () => {
+    if (!window.confirm(t('note.deleteConfirm'))) return
     setQuickNotes(notes.filter((n) => n.id !== id))
     navigate('/notes')
   }

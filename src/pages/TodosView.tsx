@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import React, { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
 import { getTodos, setTodos, getAllTags, getGoals, getContacts } from '../lib/store'
 import { getSubtaskProgress, isTodoCompleted } from '../lib/todoCompletion'
@@ -112,76 +112,6 @@ function goalDisplayLabel(g: Goal, t: (k: string) => string, lang: string): stri
     return `${g.title} (${g.month}/${g.year})`
   }
   return g.title
-}
-
-const SWIPE_ACTION_WIDTH = 72
-
-function SwipeableTodoWrap({
-  todoId,
-  onDelete,
-  children,
-}: {
-  todoId: string
-  onDelete: () => void
-  children: React.ReactNode
-}) {
-  const navigate = useNavigate()
-  const { t } = useI18n()
-  const contentOffset = -SWIPE_ACTION_WIDTH
-  const [offset, setOffset] = useState(contentOffset)
-  const startX = useRef(0)
-  const startOffset = useRef(contentOffset)
-  const currentOffsetRef = useRef(contentOffset)
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX
-    startOffset.current = offset
-    currentOffsetRef.current = offset
-  }
-  const handleTouchMove = (e: React.TouchEvent) => {
-    const dx = e.touches[0].clientX - startX.current
-    const next = Math.min(0, Math.max(-SWIPE_ACTION_WIDTH * 2, startOffset.current + dx))
-    setOffset(next)
-    currentOffsetRef.current = next
-  }
-  const handleTouchEnd = () => {
-    const cur = currentOffsetRef.current
-    const third = SWIPE_ACTION_WIDTH / 2
-    let snap = contentOffset
-    if (cur > -third) snap = 0
-    else if (cur < -SWIPE_ACTION_WIDTH - third) snap = -SWIPE_ACTION_WIDTH * 2
-    setOffset(snap)
-    startOffset.current = snap
-    currentOffsetRef.current = snap
-  }
-
-  const handleDelete = () => {
-    if (window.confirm(t('todo.deleteConfirm'))) onDelete()
-  }
-
-  return (
-    <div className="todos-swipe">
-      <div
-        className="todos-swipe-inner"
-        style={{ transform: `translateX(${offset}px)` }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div className="todos-swipe-left" aria-hidden>
-          <button type="button" className="todos-swipe-btn todos-swipe-delete" onClick={handleDelete} title={t('detail.delete')}>
-            <span className="todos-swipe-icon" aria-hidden>🗑</span>
-          </button>
-        </div>
-        <div className="todos-swipe-content">{children}</div>
-        <div className="todos-swipe-right" aria-hidden>
-          <button type="button" className="todos-swipe-btn todos-swipe-edit" onClick={() => navigate(`/edit/todo/${todoId}`)} title={t('detail.edit')}>
-            <span className="todos-swipe-icon" aria-hidden>✎</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  )
 }
 
 function TodoItemRow({
@@ -501,7 +431,6 @@ export default function TodosView() {
             <ul className="todos-list">
               {todayTodos.map((item) => (
                 <li key={item.id}>
-                  <SwipeableTodoWrap todoId={item.id} onDelete={() => updateTodos((list) => list.filter((t) => t.id !== item.id))}>
                     <TodoItemRow todo={item} onToggleComplete={handleToggleComplete} onToggleSubtask={handleToggleSubtask}>
                       <Link to={`/item/todo/${item.id}`} className="todos-item">
                         <span className="todos-item-title">{item.title}</span>
@@ -512,7 +441,6 @@ export default function TodosView() {
                         </span>
                       </Link>
                     </TodoItemRow>
-                  </SwipeableTodoWrap>
                 </li>
               ))}
             </ul>
@@ -554,7 +482,6 @@ export default function TodosView() {
                                 <ul className="todos-list">
                                   {goalTodos.map((item) => (
                                     <li key={item.id}>
-                                      <SwipeableTodoWrap todoId={item.id} onDelete={() => updateTodos((list) => list.filter((t) => t.id !== item.id))}>
                                         <TodoItemRow todo={item} onToggleComplete={handleToggleComplete} onToggleSubtask={handleToggleSubtask}>
                                           <Link to={`/item/todo/${item.id}`} className="todos-item">
                                             <span className="todos-item-title">{item.title}</span>
@@ -565,7 +492,6 @@ export default function TodosView() {
                                             </span>
                                           </Link>
                                         </TodoItemRow>
-                                      </SwipeableTodoWrap>
                                     </li>
                                   ))}
                                 </ul>
@@ -584,7 +510,6 @@ export default function TodosView() {
                   <ul className="todos-list">
                     {ungroupedTodos.map((item) => (
                       <li key={item.id}>
-                        <SwipeableTodoWrap todoId={item.id} onDelete={() => updateTodos((list) => list.filter((t) => t.id !== item.id))}>
                           <TodoItemRow todo={item} onToggleComplete={handleToggleComplete} onToggleSubtask={handleToggleSubtask}>
                             <Link to={`/item/todo/${item.id}`} className="todos-item">
                               <span className="todos-item-title">{item.title}</span>
@@ -595,7 +520,6 @@ export default function TodosView() {
                               </span>
                             </Link>
                           </TodoItemRow>
-                        </SwipeableTodoWrap>
                       </li>
                     ))}
                   </ul>
@@ -639,7 +563,6 @@ export default function TodosView() {
               <ul className="todos-list">
                 {sortedByTime.map((item) => (
                   <li key={item.id}>
-                    <SwipeableTodoWrap todoId={item.id} onDelete={() => updateTodos((list) => list.filter((t) => t.id !== item.id))}>
                       <TodoItemRow todo={item} onToggleComplete={handleToggleComplete} onToggleSubtask={handleToggleSubtask}>
                         <Link to={`/item/todo/${item.id}`} className="todos-item">
                           <span className="todos-item-title">{item.title}</span>
@@ -650,7 +573,6 @@ export default function TodosView() {
                           </span>
                         </Link>
                       </TodoItemRow>
-                    </SwipeableTodoWrap>
                   </li>
                 ))}
               </ul>
@@ -694,7 +616,6 @@ export default function TodosView() {
                           <ul className="todos-axis-event-list">
                             {byDay.get(day)!.map((item) => (
                               <li key={item.id}>
-                                <SwipeableTodoWrap todoId={item.id} onDelete={() => updateTodos((list) => list.filter((t) => t.id !== item.id))}>
                                   <TodoItemRow todo={item} onToggleComplete={handleToggleComplete} onToggleSubtask={handleToggleSubtask}>
                                     <Link to={`/item/todo/${item.id}`} className="todos-axis-event">
                                       <span className="todos-axis-event-importance">{'!'.repeat(item.importance)}</span>
@@ -702,7 +623,6 @@ export default function TodosView() {
                                       <span className="todos-axis-event-title">{item.title}</span>
                                     </Link>
                                   </TodoItemRow>
-                                </SwipeableTodoWrap>
                               </li>
                             ))}
                           </ul>

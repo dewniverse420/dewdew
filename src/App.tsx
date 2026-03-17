@@ -154,10 +154,7 @@ function App() {
       recognitionRef.current = null
     }
     recognition.onend = () => {
-      if (recognitionRef.current) {
-        setMediaLoading(false)
-        recognitionRef.current = null
-      }
+      recognitionRef.current = null
     }
     recognition.start()
   }
@@ -228,8 +225,14 @@ function App() {
               type="button"
               className="app-voice-panel-btn"
               onPointerDown={startVoiceRecognition}
-              onPointerUp={stopVoiceRecognition}
-              onPointerLeave={stopVoiceRecognition}
+              onPointerUp={() => {
+                stopVoiceRecognition()
+                if (mediaLoading) setMediaMessage(t('ocr.recognizing'))
+              }}
+              onPointerLeave={() => {
+                stopVoiceRecognition()
+                if (mediaLoading) setMediaMessage(t('ocr.recognizing'))
+              }}
               onContextMenu={(e) => e.preventDefault()}
               disabled={mediaLoading}
               aria-label={t('ocr.fromVoice')}
