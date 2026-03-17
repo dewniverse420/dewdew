@@ -1,7 +1,8 @@
 import { useI18n } from '../lib/i18n'
 import { APP_VERSION, BUILD_DATE, DEVELOPER_NAME } from '../appMeta'
-import Spinner from './Spinner'
 import './LoadingScreen.css'
+
+const LOADING_IMG_SRC = `${import.meta.env.BASE_URL}loading.svg`
 
 interface LoadingScreenProps {
   /** 可选提示文案，不传则使用 i18n loading.hint */
@@ -15,7 +16,14 @@ export default function LoadingScreen({ message }: LoadingScreenProps) {
   return (
     <div className="loading-screen">
       <div className="loading-screen-content">
-        <Spinner size="large" />
+        <img
+          src={LOADING_IMG_SRC}
+          alt=""
+          className="loading-screen-icon"
+          width="120"
+          height="256"
+          role="presentation"
+        />
         <p className="loading-screen-message">{hint}</p>
       </div>
       <footer className="loading-screen-footer">

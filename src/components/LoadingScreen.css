@@ -20,6 +20,14 @@
   gap: 20px;
 }
 
+.loading-screen-icon {
+  display: block;
+  width: 120px;
+  height: auto;
+  max-height: 200px;
+  object-fit: contain;
+}
+
 .loading-screen-message {
   margin: 0;
   font-size: 0.9375rem;
