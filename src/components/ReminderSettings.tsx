@@ -57,7 +57,7 @@ export default function ReminderSettings() {
         </span>
       </button>
       {open && (
-        <div className="reminder-settings-panel glass">
+        <div className="reminder-settings-panel">
           <button
             type="button"
             className="reminder-settings-close"

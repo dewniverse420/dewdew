@@ -70,7 +70,7 @@ export default function ThemeSettings() {
         </span>
       </button>
       {open && (
-        <div className="theme-settings-panel glass">
+        <div className="theme-settings-panel">
           <button
             type="button"
             className="theme-settings-close"

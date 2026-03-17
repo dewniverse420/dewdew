@@ -86,7 +86,7 @@ export default function DataSettings() {
         onChange={onFileChange}
       />
       {open && (
-        <div className="data-settings-panel glass">
+        <div className="data-settings-panel">
           <button
             type="button"
             className="data-settings-close"
