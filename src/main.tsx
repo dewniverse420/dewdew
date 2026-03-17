@@ -73,6 +73,17 @@ function Bootstrap() {
       </I18nProvider>
     )
   }
+
+  React.useEffect(() => {
+    if (isFirebaseConfigured() && authState.user) {
+      console.warn('[dewdew] Firebase 已连接，用户 uid:', authState.user.uid, '— 新建待办或改财务后数据会出现在 Firestore → users → 该 uid')
+    } else if (isFirebaseConfigured()) {
+      console.warn('[dewdew] Firebase 已配置但当前未登录，数据不会写入 Firestore')
+    } else {
+      console.warn('[dewdew] 未检测到 Firebase 配置（无 VITE_FIREBASE_*），数据仅存本地。Vercel 请检查 Environment Variables 并 Redeploy')
+    }
+  }, [authState.user])
+
   const basename = import.meta.env.VITE_BASE_PATH?.replace(/\/$/, '') || ''
   return (
     <BrowserRouter basename={basename || undefined}>
