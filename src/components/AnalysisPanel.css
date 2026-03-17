@@ -48,6 +48,22 @@
   padding: 14px;
 }
 
+@media (max-width: 600px) {
+  .analysis-dropdown {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    width: calc(100vw - 24px);
+    max-width: 420px;
+    max-height: min(85vh, 80dvh);
+    padding: 14px;
+    padding-top: max(14px, env(safe-area-inset-top));
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+}
+
 .analysis-dropdown-header {
   display: flex;
   align-items: center;

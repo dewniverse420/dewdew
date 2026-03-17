@@ -169,6 +169,24 @@
   margin-top: 4px;
 }
 
+.nav-item--line-icon {
+  flex: 1;
+  max-width: 72px;
+  padding: 10px 8px;
+}
+
+.nav-item--line-icon .nav-line-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-item--line-icon .nav-line-icon svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
 .nav-item--icon {
   flex: 1;
   max-width: 72px;
