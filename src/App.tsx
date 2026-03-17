@@ -324,13 +324,6 @@ function App() {
               </div>
             )}
           </div>
-          <NavLink
-            to="/create"
-            className={({ isActive }) => `nav-item nav-item--plus ${isActive ? 'active' : ''}`}
-            aria-label={t('nav.create')}
-          >
-            <span className="nav-plus">+</span>
-          </NavLink>
           <button
             type="button"
             className="nav-item nav-item--icon"

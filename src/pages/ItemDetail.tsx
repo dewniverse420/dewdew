@@ -77,6 +77,12 @@ export default function ItemDetail() {
           <dd>{item.tags.length ? item.tags.join('、') : dash}</dd>
           <dt>{t('detail.meta.location')}</dt>
           <dd>{item.location || dash}</dd>
+          {item.link && (
+            <>
+              <dt>{t('detail.meta.link')}</dt>
+              <dd><a href={item.link} target="_blank" rel="noopener noreferrer" className="detail-link">{item.link}</a></dd>
+            </>
+          )}
           <dt>{t('detail.meta.people')}</dt>
           <dd>{item.relatedPeople.length ? item.relatedPeople.join('、') : dash}</dd>
           <dt>{t('detail.meta.createdAt')}</dt>
@@ -176,6 +182,12 @@ export default function ItemDetail() {
         <dd>{new Date(item.time || item.createdAt).toLocaleString(locale)}</dd>
         <dt>{t('detail.meta.location')}</dt>
         <dd>{item.location || dash}</dd>
+        {item.link && (
+          <>
+            <dt>{t('detail.meta.link')}</dt>
+            <dd><a href={item.link} target="_blank" rel="noopener noreferrer" className="detail-link">{item.link}</a></dd>
+          </>
+        )}
         <dt>{t('detail.meta.createdAt')}</dt>
         <dd>{new Date(item.createdAt).toLocaleString(locale)}</dd>
       </dl>

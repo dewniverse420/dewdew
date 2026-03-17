@@ -143,6 +143,11 @@
   margin: 0;
 }
 
+.detail-meta .detail-link {
+  word-break: break-all;
+  color: var(--color-primary, #0a7ea4);
+}
+
 .detail-block {
   margin-bottom: 24px;
 }

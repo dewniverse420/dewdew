@@ -20,6 +20,7 @@ export default function CreateQuickNote() {
     existing?.time ? isoToLocalDatetimeLocal(existing.time) : defaultTime
   )
   const [location, setLocation] = useState(existing?.location ?? '')
+  const [link, setLink] = useState(existing?.link ?? '')
   const [attachments, setAttachments] = useState<QuickNoteItem['attachments']>(existing?.attachments ?? [])
   const [coverAttachmentId, setCoverAttachmentId] = useState<string | null>(existing?.coverAttachmentId ?? null)
 
@@ -32,6 +33,7 @@ export default function CreateQuickNote() {
         content: content.trim(),
         time: time ? new Date(time).toISOString() : created,
         location: location.trim(),
+        link: link.trim() || undefined,
         attachments,
         coverAttachmentId: coverAttachmentId || undefined,
       }
@@ -46,6 +48,7 @@ export default function CreateQuickNote() {
         content: content.trim(),
         time: time ? new Date(time).toISOString() : created,
         location: location.trim(),
+        link: link.trim() || undefined,
         attachments,
         coverAttachmentId: coverAttachmentId || undefined,
         createdAt: created,
@@ -102,6 +105,16 @@ export default function CreateQuickNote() {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder={t('createNote.locationPlaceholder')}
+          />
+        </label>
+        <label className="field">
+          <span className="field-label">{t('createNote.field.link')}</span>
+          <input
+            type="url"
+            className="input"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder={t('createNote.linkPlaceholder')}
           />
         </label>
         <div className="field">

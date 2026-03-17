@@ -40,6 +40,8 @@ export interface TodoItem {
   goalId?: string
   description: string
   location: string
+  /** 关联链接（URL） */
+  link?: string
   relatedPeople: string[]
   attachments: Attachment[]
   hasSubEvents: boolean
@@ -63,6 +65,8 @@ export interface QuickNoteItem {
   content: string
   time: string
   location: string
+  /** 关联链接（URL） */
+  link?: string
   attachments: Attachment[]
   /** 指定某张图片为封面（列表/时间轴展示用）；未设则用第一张图片 */
   coverAttachmentId?: string

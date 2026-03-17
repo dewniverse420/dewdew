@@ -31,6 +31,7 @@ const emptyTodo = (): Omit<TodoItem, 'id' | 'createdAt'> => ({
   goalId: undefined,
   description: '',
   location: '',
+  link: '',
   relatedPeople: [],
   attachments: [],
   hasSubEvents: false,
@@ -66,6 +67,7 @@ export default function CreateTodo() {
           goalId: existing.goalId,
           description: existing.description,
           location: existing.location,
+          link: existing.link ?? '',
           relatedPeople: existing.relatedPeople,
           attachments: existing.attachments,
           subtasks: existing.subtasks ?? [],
@@ -103,7 +105,7 @@ export default function CreateTodo() {
   const [showSubtaskModal, setShowSubtaskModal] = useState(false)
   const reminderMinutes = form.reminderBeforeMinutes ?? []
   const [customValue, setCustomValue] = useState('')
-  const [customUnit, setCustomUnit] = useState<'min' | 'hour' | 'day'>('min')
+  const [customUnit, setCustomUnit] = useState<'min' | 'hour' | 'day' | 'month' | 'year'>('min')
 
   const toggleReminder = (minutes: number) => {
     const minuteSet = new Set(reminderMinutes)
@@ -116,10 +118,12 @@ export default function CreateTodo() {
     set('reminderBeforeMinutes', [])
   }
 
-  const toMinutes = (val: number, unit: 'min' | 'hour' | 'day') => {
+  const toMinutes = (val: number, unit: 'min' | 'hour' | 'day' | 'month' | 'year') => {
     if (unit === 'min') return val
     if (unit === 'hour') return val * 60
-    return val * 24 * 60
+    if (unit === 'day') return val * 24 * 60
+    if (unit === 'month') return val * 30 * 24 * 60
+    return val * 365 * 24 * 60 // year
   }
 
   const addCustomReminder = () => {
@@ -151,6 +155,7 @@ export default function CreateTodo() {
         ...form,
         title,
         ddl: form.ddl || now,
+        link: (form.link ?? '').trim() || undefined,
         subtasks: subtasks.filter((s) => s.title.trim() !== ''),
         hasSubEvents: (form.subtasks?.length ?? 0) > 0,
       }
@@ -163,6 +168,7 @@ export default function CreateTodo() {
         createdAt: now,
         title,
         ddl: form.ddl || now,
+        link: (form.link ?? '').trim() || undefined,
         subtasks: subtasks.filter((s) => s.title.trim() !== ''),
         hasSubEvents: (form.subtasks?.length ?? 0) > 0,
       }
@@ -231,12 +237,14 @@ export default function CreateTodo() {
               <select
                 className="input reminder-todo-custom-unit"
                 value={customUnit}
-                onChange={(e) => setCustomUnit(e.target.value as 'min' | 'hour' | 'day')}
+                onChange={(e) => setCustomUnit(e.target.value as 'min' | 'hour' | 'day' | 'month' | 'year')}
                 aria-label={t('reminder.custom')}
               >
                 <option value="min">{t('reminder.unitMin')}</option>
                 <option value="hour">{t('reminder.unitHour')}</option>
                 <option value="day">{t('reminder.unitDay')}</option>
+                <option value="month">{t('reminder.unitMonth')}</option>
+                <option value="year">{t('reminder.unitYear')}</option>
               </select>
               <button type="button" className="btn reminder-todo-btn" onClick={addCustomReminder}>
                 {t('reminder.addCustom')}
@@ -304,6 +312,16 @@ export default function CreateTodo() {
             value={form.location}
             onChange={(e) => set('location', e.target.value)}
             placeholder={t('createTodo.locationPlaceholder')}
+          />
+        </label>
+        <label className="field">
+          <span className="field-label">{t('createTodo.field.link')}</span>
+          <input
+            type="url"
+            className="input"
+            value={form.link ?? ''}
+            onChange={(e) => set('link', e.target.value)}
+            placeholder={t('createTodo.linkPlaceholder')}
           />
         </label>
         <label className="field">
