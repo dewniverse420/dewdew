@@ -101,10 +101,38 @@ export async function initFirebase(): Promise<boolean> {
   }
 }
 
+/** Firestore 不支持 undefined，写入前去掉所有 undefined（避免 setDoc 抛错导致静默失败） */
+function stripUndefined(obj: unknown): unknown {
+  if (obj === undefined) return null
+  if (obj === null || typeof obj !== 'object') return obj
+  if (Array.isArray(obj)) return obj.map(stripUndefined)
+  const out: Record<string, unknown> = {}
+  for (const k of Object.keys(obj as object)) {
+    const v = (obj as Record<string, unknown>)[k]
+    if (v === undefined) continue
+    out[k] = stripUndefined(v)
+  }
+  return out
+}
+
 function getUserCol(collectionName: string) {
   const uid = getCurrentUserId()
   if (!db || !uid) return null
   return collection(db, 'users', uid, collectionName)
+}
+
+/** 当 Firestore 未配置或未登录时，在控制台提示原因（便于排查「数据未进 Firestore」） */
+function warnIfCannotPersist(context: string): void {
+  if (!isConfigured || !db) {
+    console.warn('[dewdew] Firestore 未写入：未检测到 Firebase 配置（请检查 Vercel 环境变量 VITE_FIREBASE_* 并 Redeploy）', context)
+    return
+  }
+  if (!getCurrentUserId()) {
+    console.warn(
+      '[dewdew] Firestore 未写入：当前无登录用户。子域与主站登录态不共享，请在 Dewdew 页内用同一账号登录后再操作。',
+      context
+    )
+  }
 }
 
 /** 从 Firestore 拉取全部待办 */
@@ -168,24 +196,26 @@ export async function fetchFinanceSettings(): Promise<FinanceSettings | null> {
 /** 将当前用户的财务设置写入 Firestore */
 export async function persistFinanceSettings(settings: FinanceSettings): Promise<void> {
   const uid = getCurrentUserId()
-  if (!db || !uid) return
+  if (!db || !uid) {
+    warnIfCannotPersist('persistFinanceSettings')
+    return
+  }
   const ref = doc(db, 'users', uid, 'settings', 'finance')
-  await setDoc(ref, {
-    referenceCurrency: settings.referenceCurrency,
-    displayCurrency: settings.displayCurrency,
-    refToDisplayRate: settings.refToDisplayRate,
-  })
+  await setDoc(ref, stripUndefined(settings) as FinanceSettings)
 }
 
 /** 将待办列表同步到 Firestore */
 export async function persistTodos(todos: TodoItem[]): Promise<void> {
   const col = getUserCol('todos')
-  if (!col) return
+  if (!col) {
+    warnIfCannotPersist('persistTodos')
+    return
+  }
   const snap = await getDocs(col)
   const currentIds = new Set(todos.map((t) => t.id))
   const toDelete = snap.docs.filter((d) => !currentIds.has(d.id))
   await Promise.all([
-    ...todos.map((t) => setDoc(doc(col, t.id), t)),
+    ...todos.map((t) => setDoc(doc(col, t.id), stripUndefined(t) as TodoItem)),
     ...toDelete.map((d) => deleteDoc(d.ref)),
   ])
 }
@@ -193,12 +223,15 @@ export async function persistTodos(todos: TodoItem[]): Promise<void> {
 /** 将目标列表同步到 Firestore */
 export async function persistGoals(goals: Goal[]): Promise<void> {
   const col = getUserCol('goals')
-  if (!col) return
+  if (!col) {
+    warnIfCannotPersist('persistGoals')
+    return
+  }
   const snap = await getDocs(col)
   const currentIds = new Set(goals.map((g) => g.id))
   const toDelete = snap.docs.filter((d) => !currentIds.has(d.id))
   await Promise.all([
-    ...goals.map((g) => setDoc(doc(col, g.id), g)),
+    ...goals.map((g) => setDoc(doc(col, g.id), stripUndefined(g) as Goal)),
     ...toDelete.map((d) => deleteDoc(d.ref)),
   ])
 }
@@ -206,12 +239,15 @@ export async function persistGoals(goals: Goal[]): Promise<void> {
 /** 将随记列表同步到 Firestore */
 export async function persistQuickNotes(notes: QuickNoteItem[]): Promise<void> {
   const col = getUserCol('quicknotes')
-  if (!col) return
+  if (!col) {
+    warnIfCannotPersist('persistQuickNotes')
+    return
+  }
   const snap = await getDocs(col)
   const currentIds = new Set(notes.map((n) => n.id))
   const toDelete = snap.docs.filter((d) => !currentIds.has(d.id))
   await Promise.all([
-    ...notes.map((n) => setDoc(doc(col, n.id), n)),
+    ...notes.map((n) => setDoc(doc(col, n.id), stripUndefined(n) as QuickNoteItem)),
     ...toDelete.map((d) => deleteDoc(d.ref)),
   ])
 }
@@ -219,12 +255,15 @@ export async function persistQuickNotes(notes: QuickNoteItem[]): Promise<void> {
 /** 将收支列表同步到 Firestore（按条存，前端仍为 JSON 数组形态） */
 export async function persistFinance(entries: FinanceEntry[]): Promise<void> {
   const col = getUserCol('finance')
-  if (!col) return
+  if (!col) {
+    warnIfCannotPersist('persistFinance')
+    return
+  }
   const snap = await getDocs(col)
   const currentIds = new Set(entries.map((e) => e.id))
   const toDelete = snap.docs.filter((d) => !currentIds.has(d.id))
   await Promise.all([
-    ...entries.map((e) => setDoc(doc(col, e.id), e)),
+    ...entries.map((e) => setDoc(doc(col, e.id), stripUndefined(e) as FinanceEntry)),
     ...toDelete.map((d) => deleteDoc(d.ref)),
   ])
 }
@@ -232,12 +271,15 @@ export async function persistFinance(entries: FinanceEntry[]): Promise<void> {
 /** 将联系人列表同步到 Firestore */
 export async function persistContacts(contacts: Contact[]): Promise<void> {
   const col = getUserCol('contacts')
-  if (!col) return
+  if (!col) {
+    warnIfCannotPersist('persistContacts')
+    return
+  }
   const snap = await getDocs(col)
   const currentIds = new Set(contacts.map((c) => c.id))
   const toDelete = snap.docs.filter((d) => !currentIds.has(d.id))
   await Promise.all([
-    ...contacts.map((c) => setDoc(doc(col, c.id), c)),
+    ...contacts.map((c) => setDoc(doc(col, c.id), stripUndefined(c) as Contact)),
     ...toDelete.map((d) => deleteDoc(d.ref)),
   ])
 }

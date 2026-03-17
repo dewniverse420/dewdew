@@ -97,11 +97,21 @@ export async function initStore(): Promise<void> {
 
 function syncToFirebase(): void {
   if (!isFirebaseConfigured()) return
-  firebasePersistTodos(_todos).catch(() => {})
-  firebasePersistGoals(_goals).catch(() => {})
-  firebasePersistQuickNotes(_quicknotes).catch(() => {})
-  firebasePersistFinance(_finance).catch(() => {})
-  firebasePersistContacts(_contacts).catch(() => {})
+  firebasePersistTodos(_todos).catch((err) => {
+    console.error('[dewdew] Firestore 写入 todos 失败', err)
+  })
+  firebasePersistGoals(_goals).catch((err) => {
+    console.error('[dewdew] Firestore 写入 goals 失败', err)
+  })
+  firebasePersistQuickNotes(_quicknotes).catch((err) => {
+    console.error('[dewdew] Firestore 写入 quicknotes 失败', err)
+  })
+  firebasePersistFinance(_finance).catch((err) => {
+    console.error('[dewdew] Firestore 写入 finance 失败', err)
+  })
+  firebasePersistContacts(_contacts).catch((err) => {
+    console.error('[dewdew] Firestore 写入 contacts 失败', err)
+  })
 }
 
 /** 导出的备份数据结构 */

@@ -1,22 +1,114 @@
 .auth-status {
+  position: relative;
+}
+
+.auth-status-trigger {
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color var(--transition), background var(--transition);
+}
+
+.auth-status-trigger:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.auth-status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-status-icon svg {
+  display: block;
+}
+
+.auth-status-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  padding: 12px;
+  padding-top: 32px;
+  background: #fff !important;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  z-index: 20;
+}
+
+@media (max-width: 768px) {
+  .auth-status-panel {
+    position: fixed;
+    left: 50%;
+    top: calc(52px + env(safe-area-inset-top));
+    right: auto;
+    transform: translateX(-50%);
+    min-width: 0;
+    width: calc(100vw - 32px);
+    max-width: 280px;
+    max-height: calc(100dvh - 52px - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+}
+
+.auth-status-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition), background var(--transition);
+}
+
+.auth-status-close:hover {
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+.auth-status-email-wrap {
+  margin: 0 0 12px 0;
+  font-size: 0.875rem;
+}
+
+.auth-status-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
 }
 
 .auth-status-email {
-  font-size: 0.8125rem;
-  color: var(--color-text-muted);
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-all;
+  color: var(--color-text);
 }
 
 .auth-status-logout {
-  padding: 6px 12px;
-  font-size: 0.8125rem;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.875rem;
   background: transparent;
   color: var(--color-text-muted);
   border: 1px solid var(--color-border);
