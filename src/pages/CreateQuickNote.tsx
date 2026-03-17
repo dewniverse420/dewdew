@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
 import { getQuickNotes, setQuickNotes } from '../lib/store'
 import type { QuickNoteItem } from '../types'
+import { isoToLocalDatetimeLocal } from '../lib/datetime'
 import AttachmentField from '../components/AttachmentField'
 import './CreateTodo.css'
 
@@ -11,12 +12,12 @@ export default function CreateQuickNote() {
   const navigate = useNavigate()
   const { id: editId } = useParams<{ id: string }>()
   const now = new Date()
-  const defaultTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+  const defaultTime = isoToLocalDatetimeLocal(now.toISOString())
   const existing = editId ? getQuickNotes().find((n) => n.id === editId) : undefined
   const [source, setSource] = useState(existing?.source ?? '')
   const [content, setContent] = useState(existing?.content ?? '')
   const [time, setTime] = useState(
-    existing?.time ? new Date(existing.time).toISOString().slice(0, 16) : defaultTime
+    existing?.time ? isoToLocalDatetimeLocal(existing.time) : defaultTime
   )
   const [location, setLocation] = useState(existing?.location ?? '')
   const [attachments, setAttachments] = useState<QuickNoteItem['attachments']>(existing?.attachments ?? [])

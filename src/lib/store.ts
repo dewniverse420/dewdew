@@ -7,11 +7,13 @@ import {
   fetchQuickNotes as firebaseFetchQuickNotes,
   fetchFinance as firebaseFetchFinance,
   fetchContacts as firebaseFetchContacts,
+  fetchFinanceSettings as firebaseFetchFinanceSettings,
   persistTodos as firebasePersistTodos,
   persistGoals as firebasePersistGoals,
   persistQuickNotes as firebasePersistQuickNotes,
   persistFinance as firebasePersistFinance,
   persistContacts as firebasePersistContacts,
+  persistFinanceSettings as firebasePersistFinanceSettings,
 } from './firebase'
 import { getCategoryKey } from './finance'
 import type { TodoItem, QuickNoteItem, Goal, FinanceEntry, Contact, FinanceSettings } from '../types'
@@ -62,6 +64,8 @@ export async function initStore(): Promise<void> {
         _quicknotes = await firebaseFetchQuickNotes()
         _finance = await firebaseFetchFinance()
         _contacts = await firebaseFetchContacts()
+        const remoteFinanceSettings = await firebaseFetchFinanceSettings()
+        if (remoteFinanceSettings) setLocal(FINANCE_SETTINGS_KEY, remoteFinanceSettings)
         setLocal(TODOS_KEY, _todos)
         setLocal(GOALS_KEY, _goals)
         setLocal(QUICKNOTES_KEY, _quicknotes)
@@ -160,6 +164,7 @@ export function getFinanceSettings(): FinanceSettings {
 
 export function setFinanceSettings(s: FinanceSettings): void {
   setLocal(FINANCE_SETTINGS_KEY, s)
+  if (isFirebaseConfigured()) firebasePersistFinanceSettings(s).catch(() => {})
 }
 
 export function getContacts(): Contact[] {

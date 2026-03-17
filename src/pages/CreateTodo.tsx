@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
 import { getTodos, setTodos, getGoals } from '../lib/store'
 import { REMINDER_PRESETS } from '../lib/reminder'
+import { isoToLocalDatetimeLocal } from '../lib/datetime'
 import type { TodoItem, Attachment } from '../types'
 import type { Goal } from '../types'
 import TagInput from '../components/TagInput'
@@ -186,7 +187,7 @@ export default function CreateTodo() {
           <input
             type="datetime-local"
             className="input"
-            value={form.ddl ? form.ddl.slice(0, 16) : ''}
+            value={form.ddl ? isoToLocalDatetimeLocal(form.ddl) : ''}
             onChange={(e) => set('ddl', e.target.value ? new Date(e.target.value).toISOString() : '')}
           />
         </label>

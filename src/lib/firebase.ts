@@ -17,8 +17,8 @@ import {
   type User,
   type Unsubscribe,
 } from 'firebase/auth'
-import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc } from 'firebase/firestore'
-import type { TodoItem, QuickNoteItem, Goal, FinanceEntry, Contact } from '../types'
+import { getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc } from 'firebase/firestore'
+import type { TodoItem, QuickNoteItem, Goal, FinanceEntry, Contact, FinanceSettings } from '../types'
 
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -145,6 +145,36 @@ export async function fetchContacts(): Promise<Contact[]> {
   if (!col) return []
   const snap = await getDocs(col)
   return snap.docs.map((d) => d.data() as Contact)
+}
+
+/** 从 Firestore 拉取当前用户的财务设置 */
+export async function fetchFinanceSettings(): Promise<FinanceSettings | null> {
+  const uid = getCurrentUserId()
+  if (!db || !uid) return null
+  try {
+    const ref = doc(db, 'users', uid, 'settings', 'finance')
+    const snap = await getDoc(ref)
+    const data = snap.data()
+    if (!data || typeof data !== 'object') return null
+    const referenceCurrency = typeof data.referenceCurrency === 'string' ? data.referenceCurrency : 'CNY'
+    const displayCurrency = typeof data.displayCurrency === 'string' ? data.displayCurrency : 'CNY'
+    const refToDisplayRate = typeof data.refToDisplayRate === 'number' && Number.isFinite(data.refToDisplayRate) ? data.refToDisplayRate : 1
+    return { referenceCurrency, displayCurrency, refToDisplayRate }
+  } catch {
+    return null
+  }
+}
+
+/** 将当前用户的财务设置写入 Firestore */
+export async function persistFinanceSettings(settings: FinanceSettings): Promise<void> {
+  const uid = getCurrentUserId()
+  if (!db || !uid) return
+  const ref = doc(db, 'users', uid, 'settings', 'finance')
+  await setDoc(ref, {
+    referenceCurrency: settings.referenceCurrency,
+    displayCurrency: settings.displayCurrency,
+    refToDisplayRate: settings.refToDisplayRate,
+  })
 }
 
 /** 将待办列表同步到 Firestore */

@@ -42,6 +42,19 @@
   z-index: 20;
 }
 
+@media (max-width: 600px) {
+  .theme-settings-panel {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    min-width: 0;
+    width: calc(100vw - 24px);
+    max-width: 280px;
+  }
+}
+
 .theme-settings-close {
   position: absolute;
   top: 8px;

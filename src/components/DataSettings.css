@@ -50,6 +50,21 @@
   z-index: 20;
 }
 
+@media (max-width: 600px) {
+  .data-settings-panel {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    min-width: 0;
+    width: calc(100vw - 24px);
+    max-width: 320px;
+    max-height: min(85vh, 80dvh);
+    overflow-y: auto;
+  }
+}
+
 .data-settings-close {
   position: absolute;
   top: 8px;

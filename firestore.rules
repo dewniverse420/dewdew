@@ -1,0 +1,9 @@
+rules_version = '2';
+// 每个登录用户只能读写自己的数据：users/{userId}/...
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

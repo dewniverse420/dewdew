@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
 import { getContacts, setContacts } from '../lib/store'
 import type { Contact, ContactEvent } from '../types'
+import { isoToLocalDatetimeLocal } from '../lib/datetime'
 import AttachmentField from '../components/AttachmentField'
 import './CreateContact.css'
 
@@ -204,7 +205,7 @@ export default function CreateContact() {
                 <input
                   type="datetime-local"
                   className="input"
-                  value={ev.time ? ev.time.slice(0, 16) : ''}
+                  value={ev.time ? isoToLocalDatetimeLocal(ev.time) : ''}
                   onChange={(e) => updateEvent(ev.id, { time: e.target.value ? new Date(e.target.value).toISOString() : '' })}
                 />
               </label>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../lib/i18n'
+import { isoToLocalDatetimeLocal } from '../lib/datetime'
 import type { Subtask } from '../types'
 import './SubtaskEditModal.css'
 
@@ -91,7 +92,7 @@ export default function SubtaskEditModal({ subtasks: initial, onSave, onClose }:
               <input
                 type="datetime-local"
                 className="input subtask-ddl"
-                value={s.ddl ? s.ddl.slice(0, 16) : ''}
+                value={s.ddl ? isoToLocalDatetimeLocal(s.ddl) : ''}
                 onChange={(e) => update(s.id, { ddl: e.target.value ? new Date(e.target.value).toISOString() : '' })}
               />
               <label className="subtask-done">
