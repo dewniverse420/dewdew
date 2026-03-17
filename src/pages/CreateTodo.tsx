@@ -102,7 +102,8 @@ export default function CreateTodo() {
   const subtasks = form.subtasks ?? []
   const [showSubtaskModal, setShowSubtaskModal] = useState(false)
   const reminderMinutes = form.reminderBeforeMinutes ?? []
-  const [customMinutesInput, setCustomMinutesInput] = useState('')
+  const [customValue, setCustomValue] = useState('')
+  const [customUnit, setCustomUnit] = useState<'min' | 'hour' | 'day'>('min')
 
   const toggleReminder = (minutes: number) => {
     const minuteSet = new Set(reminderMinutes)
@@ -115,13 +116,20 @@ export default function CreateTodo() {
     set('reminderBeforeMinutes', [])
   }
 
+  const toMinutes = (val: number, unit: 'min' | 'hour' | 'day') => {
+    if (unit === 'min') return val
+    if (unit === 'hour') return val * 60
+    return val * 24 * 60
+  }
+
   const addCustomReminder = () => {
-    const n = parseInt(customMinutesInput, 10)
+    const n = parseInt(customValue, 10)
     if (!Number.isFinite(n) || n <= 0) return
+    const minutes = toMinutes(n, customUnit)
     const minuteSet = new Set(reminderMinutes)
-    minuteSet.add(n)
+    minuteSet.add(minutes)
     set('reminderBeforeMinutes', Array.from(minuteSet).sort((a, b) => a - b))
-    setCustomMinutesInput('')
+    setCustomValue('')
   }
 
   const removeReminder = (minutes: number) => {
@@ -207,31 +215,44 @@ export default function CreateTodo() {
                 {t(p.labelKey)}
               </button>
             ))}
+          </div>
+          <div className="reminder-todo-custom-block">
+            <span className="reminder-todo-custom-label">{t('reminder.custom')}</span>
             <div className="reminder-todo-custom">
               <input
                 type="number"
                 className="input reminder-todo-custom-input"
                 min={1}
-                placeholder={t('reminder.customMinutes')}
-                value={customMinutesInput}
-                onChange={(e) => setCustomMinutesInput(e.target.value)}
+                placeholder="0"
+                value={customValue}
+                onChange={(e) => setCustomValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomReminder())}
               />
+              <select
+                className="input reminder-todo-custom-unit"
+                value={customUnit}
+                onChange={(e) => setCustomUnit(e.target.value as 'min' | 'hour' | 'day')}
+                aria-label={t('reminder.custom')}
+              >
+                <option value="min">{t('reminder.unitMin')}</option>
+                <option value="hour">{t('reminder.unitHour')}</option>
+                <option value="day">{t('reminder.unitDay')}</option>
+              </select>
               <button type="button" className="btn reminder-todo-btn" onClick={addCustomReminder}>
-                {t('reminder.custom')}
+                {t('reminder.addCustom')}
               </button>
             </div>
+            {customOnly.length > 0 && (
+              <div className="reminder-todo-custom-list">
+                {customOnly.map((m) => (
+                  <span key={m} className="reminder-todo-custom-tag">
+                    {m} {t('reminder.customMinutes')}
+                    <button type="button" className="reminder-todo-custom-remove" onClick={() => removeReminder(m)} aria-label={t('common.close')}>×</button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-          {customOnly.length > 0 && (
-            <div className="reminder-todo-custom-list">
-              {customOnly.map((m) => (
-                <span key={m} className="reminder-todo-custom-tag">
-                  {m} {t('reminder.customMinutes')}
-                  <button type="button" className="reminder-todo-custom-remove" onClick={() => removeReminder(m)} aria-label={t('common.close')}>×</button>
-                </span>
-              ))}
-            </div>
-          )}
         </div>
         <label className="field">
           <span className="field-label">{t('createTodo.field.importance')}</span>

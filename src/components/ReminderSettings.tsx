@@ -66,37 +66,40 @@ export default function ReminderSettings() {
           >
             ×
           </button>
-          <span className="reminder-settings-label">{t('reminder.title')}</span>
-          <p className="reminder-settings-hint">{t('reminder.hint')}</p>
-          {!isNotificationSupported() && (
-            <p className="reminder-settings-unsupported">{t('reminder.unsupported')}</p>
-          )}
-          {isNotificationSupported() && permission !== 'granted' && (
-            <button type="button" className="btn reminder-settings-permission" onClick={handleRequestPermission}>
-              {permission === 'denied' ? t('reminder.permissionDenied') : t('reminder.enable')}
-            </button>
-          )}
-          {isNotificationSupported() && (
-            <>
-              <span className="reminder-settings-label reminder-settings-label--top">{t('reminder.masterSwitch')}</span>
-              <div className="reminder-settings-master">
-                <button
-                  type="button"
-                  className={`btn reminder-master-btn ${enabled ? 'active' : ''}`}
-                  onClick={handleMasterOn}
-                >
-                  {t('reminder.masterOn')}
-                </button>
-                <button
-                  type="button"
-                  className={`btn reminder-master-btn ${!enabled ? 'active' : ''}`}
-                  onClick={handleMasterOff}
-                >
-                  {t('reminder.masterOff')}
-                </button>
-              </div>
-            </>
-          )}
+          <div className="reminder-settings-body">
+            <h3 className="reminder-settings-title">{t('reminder.title')}</h3>
+            <p className="reminder-settings-hint">{t('reminder.hint')}</p>
+            {!isNotificationSupported() ? (
+              <p className="reminder-settings-unsupported">{t('reminder.unsupported')}</p>
+            ) : (
+              <>
+                {permission !== 'granted' && (
+                  <button type="button" className="btn reminder-settings-permission" onClick={handleRequestPermission}>
+                    {permission === 'denied' ? t('reminder.permissionDenied') : t('reminder.enable')}
+                  </button>
+                )}
+                <div className="reminder-settings-row">
+                  <span className="reminder-settings-label">{t('reminder.masterSwitch')}</span>
+                  <div className="reminder-settings-master">
+                    <button
+                      type="button"
+                      className={`btn reminder-master-btn ${enabled ? 'active' : ''}`}
+                      onClick={handleMasterOn}
+                    >
+                      {t('reminder.masterOn')}
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn reminder-master-btn ${!enabled ? 'active' : ''}`}
+                      onClick={handleMasterOff}
+                    >
+                      {t('reminder.masterOff')}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
