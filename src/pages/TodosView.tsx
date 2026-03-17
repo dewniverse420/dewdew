@@ -7,7 +7,7 @@ import ReflectionModal from '../components/ReflectionModal'
 import type { TodoItem, Goal, Contact } from '../types'
 import './TodosView.css'
 
-type DisplayMode = 'tags' | 'timeline' | 'goals'
+type DisplayMode = 'today' | 'tags' | 'timeline' | 'goals'
 type TimelineSubMode = 'axis' | 'calendar'
 type CalendarLevel = 'month' | 'week' | 'day'
 
@@ -42,6 +42,23 @@ function toDateKey(iso: string): string {
 
 function todayKey(): string {
   return new Date().toISOString().slice(0, 10)
+}
+
+/** 本地日期 YYYY-MM-DD，用于「今日待办」等按本地日筛选 */
+function todayKeyLocal(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function toDateKeyLocal(iso: string): string {
+  const d = new Date(iso)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 /** 周一为 0，周日为 6 */
@@ -146,7 +163,7 @@ export default function TodosView() {
     () => [t('todos.weekday.1'), t('todos.weekday.2'), t('todos.weekday.3'), t('todos.weekday.4'), t('todos.weekday.5'), t('todos.weekday.6'), t('todos.weekday.7')],
     [t]
   )
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('tags')
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('today')
   const [timelineSubMode, setTimelineSubMode] = useState<TimelineSubMode>('axis')
   const [calendarViewLevel, setCalendarViewLevel] = useState<CalendarLevel>('month')
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
@@ -205,6 +222,18 @@ export default function TodosView() {
     () => [...filtered].sort((a, b) => new Date(getTodoTime(a)).getTime() - new Date(getTodoTime(b)).getTime()),
     [filtered]
   )
+
+  const todayKeyLocalStr = todayKeyLocal()
+  const todayTodos = useMemo(
+    () =>
+      [...visibleTodos]
+        .filter((t) => toDateKeyLocal(getTodoTime(t)) === todayKeyLocalStr)
+        .sort((a, b) => new Date(getTodoTime(a)).getTime() - new Date(getTodoTime(b)).getTime()),
+    [visibleTodos, todayKeyLocalStr]
+  )
+  const todayCompleted = useMemo(() => todayTodos.filter((t) => isTodoCompleted(t)).length, [todayTodos])
+  const todayTotal = todayTodos.length
+  const todayPercent = todayTotal ? Math.round((todayCompleted / todayTotal) * 100) : 0
 
   const byDay = useMemo(() => {
     const map = new Map<string, TodoItem[]>()
@@ -311,6 +340,13 @@ export default function TodosView() {
       <div className="todos-mode-toggle">
         <button
           type="button"
+          className={displayMode === 'today' ? 'active' : ''}
+          onClick={() => setDisplayMode('today')}
+        >
+          {t('todos.byToday')}
+        </button>
+        <button
+          type="button"
           className={displayMode === 'tags' ? 'active' : ''}
           onClick={() => setDisplayMode('tags')}
         >
@@ -331,6 +367,39 @@ export default function TodosView() {
           {t('todos.byGoals')}
         </button>
       </div>
+
+      {displayMode === 'today' && (
+        <div className="todos-today-wrap">
+          <div className="todos-today-progress">
+            <div className="todos-today-progress-bar" role="progressbar" aria-valuenow={todayPercent} aria-valuemin={0} aria-valuemax={100}>
+              <div className="todos-today-progress-fill" style={{ width: `${todayPercent}%` }} />
+            </div>
+            <p className="todos-today-progress-text">
+              {t('todos.today.progress', { done: String(todayCompleted), total: String(todayTotal), percent: String(todayPercent) })}
+            </p>
+          </div>
+          {todayTodos.length === 0 ? (
+            <p className="empty-hint">{t('todos.today.empty')}</p>
+          ) : (
+            <ul className="todos-list">
+              {todayTodos.map((item) => (
+                <li key={item.id}>
+                  <TodoItemRow todo={item} onToggleComplete={handleToggleComplete}>
+                    <Link to={`/item/todo/${item.id}`} className="todos-item">
+                      <span className="todos-item-title">{item.title}</span>
+                      <span className="todos-item-meta">
+                        <span className="todos-item-importance" title={t('createTodo.field.importance')}>{'!'.repeat(item.importance)}</span>
+                        {item.ddl ? new Date(item.ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('todos.todo.noDdl')}
+                        {item.tags.length > 0 && ` · ${item.tags.join('、')}`}
+                      </span>
+                    </Link>
+                  </TodoItemRow>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {displayMode === 'goals' && (
         <div className="todos-goals-wrap">
