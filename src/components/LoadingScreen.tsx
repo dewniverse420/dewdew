@@ -2,7 +2,7 @@ import { useI18n } from '../lib/i18n'
 import { APP_VERSION, BUILD_DATE, DEVELOPER_NAME } from '../appMeta'
 import './LoadingScreen.css'
 
-const LOADING_IMG_SRC = `${import.meta.env.BASE_URL}loading.svg`
+const LOADING_IMG_SRC = `${import.meta.env.BASE_URL}loading.gif`
 
 interface LoadingScreenProps {
   /** 可选提示文案，不传则使用 i18n loading.hint */
