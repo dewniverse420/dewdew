@@ -55,7 +55,7 @@ export default function ItemDetail() {
     return (
       <section className="page item-detail">
         <div className="detail-header">
-          <button type="button" className="btn" onClick={() => navigate(-1)}>{t('detail.back')}</button>
+          <button type="button" className="btn" onClick={() => navigate('/todos')}>{t('detail.back')}</button>
           <span className="detail-type">{t('detail.type.todo')}</span>
           {completed && <span className="detail-badge detail-badge--completed">{t('todo.completed')}</span>}
         </div>
@@ -164,7 +164,7 @@ export default function ItemDetail() {
   return (
     <section className="page item-detail">
       <div className="detail-header">
-        <button type="button" className="btn" onClick={() => navigate(-1)}>{t('detail.back')}</button>
+        <button type="button" className="btn" onClick={() => navigate('/notes')}>{t('detail.back')}</button>
         <span className="detail-type">{t('detail.type.note')}</span>
       </div>
       {item.source && <p className="detail-source">{t('detail.source')}：{item.source}</p>}

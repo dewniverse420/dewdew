@@ -13,7 +13,7 @@
 }
 
 .subtask-modal {
-  background: var(--color-surface);
+  background: #fff !important;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   max-width: 520px;
@@ -29,13 +29,6 @@
     padding: 12px;
     padding-top: max(12px, env(safe-area-inset-top));
     padding-bottom: max(12px, env(safe-area-inset-bottom));
-  }
-  .subtask-modal-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .subtask-modal-row .subtask-ddl {
-    min-width: 0;
   }
 }
 
@@ -53,24 +46,46 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .subtask-modal-row {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.subtask-modal-row-top {
+  display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
 .subtask-modal-row .subtask-input {
   flex: 1;
-  min-width: 120px;
+  min-width: 0;
+  padding: 10px 12px;
+  font-size: 0.9375rem;
 }
 
 .subtask-modal-row .subtask-ddl {
-  flex: 0 0 auto;
-  min-width: 160px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  font-size: 1rem;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.subtask-modal-row-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .subtask-modal-row .subtask-done {
@@ -85,6 +100,13 @@
 .subtask-modal-row .subtask-done input {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
+}
+
+.subtask-modal-row .subtask-remove {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  min-width: 36px;
 }
 
 .subtask-modal-actions {

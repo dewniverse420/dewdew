@@ -6,8 +6,8 @@ export interface Attachment {
   dataUrl: string
 }
 
-/** 目标类型：大目标、年目标、月目标 */
-export type GoalType = 'major' | 'year' | 'month'
+/** 目标类型：大目标、年目标、月目标、自定义 */
+export type GoalType = 'major' | 'year' | 'month' | 'custom'
 
 /** 目标（用于归类待办） */
 export interface Goal {

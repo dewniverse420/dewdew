@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useMemo, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
 import { getTodos, setTodos, getAllTags, getGoals, getContacts } from '../lib/store'
 import { getSubtaskProgress, isTodoCompleted } from '../lib/todoCompletion'
@@ -114,44 +114,130 @@ function goalDisplayLabel(g: Goal, t: (k: string) => string, lang: string): stri
   return g.title
 }
 
+const SWIPE_ACTION_WIDTH = 88
+
+function SwipeableTodoWrap({
+  todoId,
+  onDelete,
+  children,
+}: {
+  todoId: string
+  onDelete: () => void
+  children: React.ReactNode
+}) {
+  const navigate = useNavigate()
+  const { t } = useI18n()
+  const [offset, setOffset] = useState(-SWIPE_ACTION_WIDTH)
+  const startX = useRef(0)
+  const startOffset = useRef(-SWIPE_ACTION_WIDTH)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX
+    startOffset.current = offset
+  }
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const dx = e.touches[0].clientX - startX.current
+    const next = Math.min(0, Math.max(-SWIPE_ACTION_WIDTH, startOffset.current + dx))
+    setOffset(next)
+  }
+  const handleTouchEnd = () => {
+    const snap = offset > -SWIPE_ACTION_WIDTH / 2 ? 0 : -SWIPE_ACTION_WIDTH
+    setOffset(snap)
+    startOffset.current = snap
+  }
+
+  const handleDelete = () => {
+    if (window.confirm(t('todo.deleteConfirm'))) onDelete()
+  }
+
+  return (
+    <div className="todos-swipe">
+      <div
+        className="todos-swipe-inner"
+        style={{ transform: `translateX(${offset}px)` }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="todos-swipe-actions">
+          <button type="button" className="todos-swipe-btn todos-swipe-edit" onClick={() => navigate(`/edit/todo/${todoId}`)}>
+            {t('detail.edit')}
+          </button>
+          <button type="button" className="todos-swipe-btn todos-swipe-delete" onClick={handleDelete}>
+            {t('detail.delete')}
+          </button>
+        </div>
+        <div className="todos-swipe-content">{children}</div>
+      </div>
+    </div>
+  )
+}
+
 function TodoItemRow({
   todo,
   onToggleComplete,
+  onToggleSubtask,
   children,
 }: {
   todo: TodoItem
   onToggleComplete: (todo: TodoItem, completed: boolean) => void
+  onToggleSubtask?: (todo: TodoItem, subtaskId: string, completed: boolean) => void
   children: React.ReactNode
 }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
+  const locale = lang === 'zh' ? 'zh-CN' : 'en'
   const completed = isTodoCompleted(todo)
   const progress = getSubtaskProgress(todo.subtasks)
   const hasSubtasks = todo.subtasks && todo.subtasks.length > 0
   const urgency = getTodoUrgency(todo)
   return (
-    <div
-      className={`todos-item-wrap ${completed ? 'todos-item--completed' : ''}`}
-      style={{ ['--card-urgency' as string]: String(urgency) }}
-    >
-      {children}
-      <span className="todos-item-right" onClick={(e) => e.preventDefault()}>
-        {hasSubtasks ? (
-          <span className="todos-item-percent">{progress.done}/{progress.total} {progress.percent}%</span>
-        ) : (
-          <button
-            type="button"
-            className="todos-item-check"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onToggleComplete(todo, !todo.completed)
-            }}
-            aria-label={todo.completed ? t('todo.markIncomplete') : t('todo.markComplete')}
-          >
-            {todo.completed ? '✓' : '○'}
-          </button>
-        )}
-      </span>
+    <div className="todos-item-block">
+      <div
+        className={`todos-item-wrap ${completed ? 'todos-item--completed' : ''}`}
+        style={{ ['--card-urgency' as string]: String(urgency) }}
+      >
+        {children}
+        <span className="todos-item-right" onClick={(e) => e.preventDefault()}>
+          {hasSubtasks ? (
+            <span className="todos-item-percent">{progress.done}/{progress.total} {progress.percent}%</span>
+          ) : (
+            <button
+              type="button"
+              className="todos-item-check"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onToggleComplete(todo, !todo.completed)
+              }}
+              aria-label={todo.completed ? t('todo.markIncomplete') : t('todo.markComplete')}
+            >
+              {todo.completed ? '✓' : '○'}
+            </button>
+          )}
+        </span>
+      </div>
+      {hasSubtasks && todo.subtasks && (
+        <ul className="todos-sublist" aria-label={t('createTodo.field.subtasks')}>
+          {todo.subtasks.map((s) => (
+            <li key={s.id} className={`todos-subitem ${s.completed ? 'todos-subitem--done' : ''}`}>
+              <button
+                type="button"
+                className="todos-subitem-check"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onToggleSubtask?.(todo, s.id, !s.completed)
+                }}
+                aria-label={s.completed ? t('todo.markIncomplete') : t('todo.markComplete')}
+              >
+                {s.completed ? '✓' : '○'}
+              </button>
+              <span className="todos-subitem-title">{s.title}</span>
+              {s.ddl && <span className="todos-subitem-ddl">{new Date(s.ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
@@ -191,16 +277,24 @@ export default function TodosView() {
     setReflectionTodoId(null)
   }
 
+  const handleToggleSubtask = (todo: TodoItem, subtaskId: string, completed: boolean) => {
+    if (!todo.subtasks) return
+    const next = todo.subtasks.map((s) => (s.id === subtaskId ? { ...s, completed } : s))
+    setTodos(todos.map((item) => (item.id === todo.id ? { ...item, subtasks: next } : item)))
+  }
+
   const goalsByType = useMemo(() => {
     const major: Goal[] = []
     const year: Goal[] = []
     const month: Goal[] = []
+    const custom: Goal[] = []
     goals.forEach((g) => {
       if (g.type === 'major') major.push(g)
       else if (g.type === 'year') year.push(g)
-      else month.push(g)
+      else if (g.type === 'month') month.push(g)
+      else custom.push(g)
     })
-    return { major, year, month }
+    return { major, year, month, custom }
   }, [goals])
 
   const todosByGoalId = useMemo(() => {
@@ -384,16 +478,18 @@ export default function TodosView() {
             <ul className="todos-list">
               {todayTodos.map((item) => (
                 <li key={item.id}>
-                  <TodoItemRow todo={item} onToggleComplete={handleToggleComplete}>
-                    <Link to={`/item/todo/${item.id}`} className="todos-item">
-                      <span className="todos-item-title">{item.title}</span>
-                      <span className="todos-item-meta">
-                        <span className="todos-item-importance" title={t('createTodo.field.importance')}>{'!'.repeat(item.importance)}</span>
-                        {item.ddl ? new Date(item.ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('todos.todo.noDdl')}
-                        {item.tags.length > 0 && ` · ${item.tags.join('、')}`}
-                      </span>
-                    </Link>
-                  </TodoItemRow>
+                  <SwipeableTodoWrap todoId={item.id} onDelete={() => setTodos(todos.filter((t) => t.id !== item.id))}>
+                    <TodoItemRow todo={item} onToggleComplete={handleToggleComplete} onToggleSubtask={handleToggleSubtask}>
+                      <Link to={`/item/todo/${item.id}`} className="todos-item">
+                        <span className="todos-item-title">{item.title}</span>
+                        <span className="todos-item-meta">
+                          <span className="todos-item-importance" title={t('createTodo.field.importance')}>{'!'.repeat(item.importance)}</span>
+                          {item.ddl ? new Date(item.ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('todos.todo.noDdl')}
+                          {item.tags.length > 0 && ` · ${item.tags.join('、')}`}
+                        </span>
+                      </Link>
+                    </TodoItemRow>
+                  </SwipeableTodoWrap>
                 </li>
               ))}
             </ul>
@@ -415,9 +511,9 @@ export default function TodosView() {
               {goals.length === 0 && (
                 <p className="sub-hint">{t('todos.empty.noGoalHint')}</p>
               )}
-              {(goalsByType.major.length > 0 || goalsByType.year.length > 0 || goalsByType.month.length > 0) && (
+              {(goalsByType.major.length > 0 || goalsByType.year.length > 0 || goalsByType.month.length > 0 || goalsByType.custom.length > 0) && (
                 <div className="todos-goals-sections">
-                  {(['major', 'year', 'month'] as const).map((typeKey) => {
+                  {(['major', 'year', 'month', 'custom'] as const).map((typeKey) => {
                     const list = goalsByType[typeKey]
                     if (list.length === 0) return null
                     const typeLabel = t(`createGoal.goalType.${typeKey}`)
@@ -435,16 +531,18 @@ export default function TodosView() {
                                 <ul className="todos-list">
                                   {goalTodos.map((item) => (
                                     <li key={item.id}>
-                                      <TodoItemRow todo={item} onToggleComplete={handleToggleComplete}>
-                                        <Link to={`/item/todo/${item.id}`} className="todos-item">
-                                          <span className="todos-item-title">{item.title}</span>
-                                          <span className="todos-item-meta">
-                                            <span className="todos-item-importance" title={t('createTodo.field.importance')}>{'!'.repeat(item.importance)}</span>
-                                            {item.ddl ? new Date(item.ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('todos.todo.noDdl')}
-                                            {item.tags.length > 0 && ` · ${item.tags.join('、')}`}
-                                          </span>
-                                        </Link>
-                                      </TodoItemRow>
+                                      <SwipeableTodoWrap todoId={item.id} onDelete={() => setTodos(todos.filter((t) => t.id !== item.id))}>
+                                        <TodoItemRow todo={item} onToggleComplete={handleToggleComplete} onToggleSubtask={handleToggleSubtask}>
+                                          <Link to={`/item/todo/${item.id}`} className="todos-item">
+                                            <span className="todos-item-title">{item.title}</span>
+                                            <span className="todos-item-meta">
+                                              <span className="todos-item-importance" title={t('createTodo.field.importance')}>{'!'.repeat(item.importance)}</span>
+                                              {item.ddl ? new Date(item.ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('todos.todo.noDdl')}
+                                              {item.tags.length > 0 && ` · ${item.tags.join('、')}`}
+                                            </span>
+                                          </Link>
+                                        </TodoItemRow>
+                                      </SwipeableTodoWrap>
                                     </li>
                                   ))}
                                 </ul>
@@ -463,16 +561,18 @@ export default function TodosView() {
                   <ul className="todos-list">
                     {ungroupedTodos.map((item) => (
                       <li key={item.id}>
-                        <TodoItemRow todo={item} onToggleComplete={handleToggleComplete}>
-                          <Link to={`/item/todo/${item.id}`} className="todos-item">
-                            <span className="todos-item-title">{item.title}</span>
-                            <span className="todos-item-meta">
-                              <span className="todos-item-importance" title={t('createTodo.field.importance')}>{'!'.repeat(item.importance)}</span>
-                              {item.ddl ? new Date(item.ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('todos.todo.noDdl')}
-                              {item.tags.length > 0 && ` · ${item.tags.join('、')}`}
-                            </span>
-                          </Link>
-                        </TodoItemRow>
+                        <SwipeableTodoWrap todoId={item.id} onDelete={() => setTodos(todos.filter((t) => t.id !== item.id))}>
+                          <TodoItemRow todo={item} onToggleComplete={handleToggleComplete} onToggleSubtask={handleToggleSubtask}>
+                            <Link to={`/item/todo/${item.id}`} className="todos-item">
+                              <span className="todos-item-title">{item.title}</span>
+                              <span className="todos-item-meta">
+                                <span className="todos-item-importance" title={t('createTodo.field.importance')}>{'!'.repeat(item.importance)}</span>
+                                {item.ddl ? new Date(item.ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('todos.todo.noDdl')}
+                                {item.tags.length > 0 && ` · ${item.tags.join('、')}`}
+                              </span>
+                            </Link>
+                          </TodoItemRow>
+                        </SwipeableTodoWrap>
                       </li>
                     ))}
                   </ul>
@@ -516,16 +616,18 @@ export default function TodosView() {
               <ul className="todos-list">
                 {sortedByTime.map((item) => (
                   <li key={item.id}>
-                    <TodoItemRow todo={item} onToggleComplete={handleToggleComplete}>
-                      <Link to={`/item/todo/${item.id}`} className="todos-item">
-                        <span className="todos-item-title">{item.title}</span>
-                        <span className="todos-item-meta">
-                          <span className="todos-item-importance" title={t('createTodo.field.importance')}>{'!'.repeat(item.importance)}</span>
-                          {item.ddl ? new Date(item.ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('todos.todo.noDdl')}
-                          {item.tags.length > 0 && ` · ${item.tags.join('、')}`}
-                        </span>
-                      </Link>
-                    </TodoItemRow>
+                    <SwipeableTodoWrap todoId={item.id} onDelete={() => setTodos(todos.filter((t) => t.id !== item.id))}>
+                      <TodoItemRow todo={item} onToggleComplete={handleToggleComplete} onToggleSubtask={handleToggleSubtask}>
+                        <Link to={`/item/todo/${item.id}`} className="todos-item">
+                          <span className="todos-item-title">{item.title}</span>
+                          <span className="todos-item-meta">
+                            <span className="todos-item-importance" title={t('createTodo.field.importance')}>{'!'.repeat(item.importance)}</span>
+                            {item.ddl ? new Date(item.ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('todos.todo.noDdl')}
+                            {item.tags.length > 0 && ` · ${item.tags.join('、')}`}
+                          </span>
+                        </Link>
+                      </TodoItemRow>
+                    </SwipeableTodoWrap>
                   </li>
                 ))}
               </ul>
@@ -569,13 +671,15 @@ export default function TodosView() {
                           <ul className="todos-axis-event-list">
                             {byDay.get(day)!.map((item) => (
                               <li key={item.id}>
-                                <TodoItemRow todo={item} onToggleComplete={handleToggleComplete}>
-                                  <Link to={`/item/todo/${item.id}`} className="todos-axis-event">
-                                    <span className="todos-axis-event-importance">{'!'.repeat(item.importance)}</span>
-                                    <span className="todos-axis-event-time">{formatTime(getTodoTime(item), locale)}</span>
-                                    <span className="todos-axis-event-title">{item.title}</span>
-                                  </Link>
-                                </TodoItemRow>
+                                <SwipeableTodoWrap todoId={item.id} onDelete={() => setTodos(todos.filter((t) => t.id !== item.id))}>
+                                  <TodoItemRow todo={item} onToggleComplete={handleToggleComplete} onToggleSubtask={handleToggleSubtask}>
+                                    <Link to={`/item/todo/${item.id}`} className="todos-axis-event">
+                                      <span className="todos-axis-event-importance">{'!'.repeat(item.importance)}</span>
+                                      <span className="todos-axis-event-time">{formatTime(getTodoTime(item), locale)}</span>
+                                      <span className="todos-axis-event-title">{item.title}</span>
+                                    </Link>
+                                  </TodoItemRow>
+                                </SwipeableTodoWrap>
                               </li>
                             ))}
                           </ul>

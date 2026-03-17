@@ -51,7 +51,9 @@ function App() {
   const [mediaLoading, setMediaLoading] = useState(false)
   const [mediaMessage, setMediaMessage] = useState('')
   const [showCameraMenu, setShowCameraMenu] = useState(false)
+  const [voicePanelOpen, setVoicePanelOpen] = useState(false)
   const cameraWrapRef = useRef<HTMLDivElement>(null)
+  const recognitionRef = useRef<{ stop: () => void } | null>(null)
 
   useEffect(() => {
     if (!showCameraMenu) return
@@ -121,27 +123,56 @@ function App() {
       alert(t('ocr.voiceUnsupported'))
       return
     }
+    setVoicePanelOpen(true)
+    setMediaMessage('')
+  }
+
+  const startVoiceRecognition = () => {
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!Recognition) return
+    if (recognitionRef.current) return
     const recognition = new Recognition()
+    recognitionRef.current = recognition
     recognition.lang = lang === 'zh' ? 'zh-CN' : 'en-US'
     recognition.continuous = false
     recognition.interimResults = false
-    setMediaMessage(t('ocr.speakHint'))
+    setMediaMessage(t('ocr.listening'))
     setMediaLoading(true)
     recognition.onresult = (event: any) => {
       const transcript = event.results[0]?.[0]?.transcript ?? ''
       const title = transcript.slice(0, 200)
       const description = transcript.length > 200 ? transcript.slice(200) : ''
       setMediaLoading(false)
+      setVoicePanelOpen(false)
+      recognitionRef.current = null
       navigate('/create/todo', { state: { prefilled: { title, description } } })
     }
     recognition.onerror = () => {
       setMediaMessage(t('ocr.voiceError'))
       setMediaLoading(false)
+      setVoicePanelOpen(false)
+      recognitionRef.current = null
     }
-    recognition.onend = () => setMediaLoading(false)
+    recognition.onend = () => {
+      if (recognitionRef.current) {
+        setMediaLoading(false)
+        recognitionRef.current = null
+      }
+    }
     recognition.start()
+  }
+
+  const stopVoiceRecognition = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop()
+      recognitionRef.current = null
+    }
+  }
+
+  const closeVoicePanel = () => {
+    stopVoiceRecognition()
+    setVoicePanelOpen(false)
+    setMediaLoading(false)
   }
 
   return (
@@ -188,7 +219,36 @@ function App() {
         aria-hidden
         onChange={handleOcrFile}
       />
-      {mediaLoading && (
+      {voicePanelOpen && (
+        <div className="app-voice-panel" role="dialog" aria-modal="true" aria-label={t('ocr.fromVoice')}>
+          <div className="app-voice-panel-inner">
+            <button type="button" className="app-voice-panel-close" onClick={closeVoicePanel} aria-label={t('common.close')}>×</button>
+            <p className="app-voice-panel-hint">{t('ocr.longPressHint')}</p>
+            <button
+              type="button"
+              className="app-voice-panel-btn"
+              onPointerDown={startVoiceRecognition}
+              onPointerUp={stopVoiceRecognition}
+              onPointerLeave={stopVoiceRecognition}
+              onContextMenu={(e) => e.preventDefault()}
+              disabled={mediaLoading}
+              aria-label={t('ocr.fromVoice')}
+            >
+              {mediaLoading ? (
+                <>
+                  <Spinner size="medium" />
+                  <span className="app-voice-panel-btn-text">{mediaMessage}</span>
+                </>
+              ) : (
+                <span className="app-voice-panel-btn-icon" aria-hidden>
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z" /></svg>
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+      {mediaLoading && !voicePanelOpen && (
         <div className="app-loading-overlay" role="status" aria-live="polite" aria-describedby="app-loading-message">
           <Spinner size="large" />
           <p id="app-loading-message" className="app-loading-text">{mediaMessage}</p>
@@ -269,6 +329,7 @@ function App() {
             onClick={handleVoiceClick}
             disabled={mediaLoading}
             aria-label={t('ocr.fromVoice')}
+            aria-expanded={voicePanelOpen}
           >
             <span className="nav-icon-circle" aria-hidden>
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>

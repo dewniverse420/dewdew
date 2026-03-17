@@ -82,28 +82,32 @@ export default function SubtaskEditModal({ subtasks: initial, onSave, onClose }:
         <div className="subtask-modal-list">
           {list.map((s) => (
             <div key={s.id} className="subtask-modal-row">
-              <input
-                type="text"
-                className="input subtask-input"
-                value={s.title}
-                onChange={(e) => update(s.id, { title: e.target.value })}
-                placeholder={t('createTodo.subtaskName')}
-              />
+              <div className="subtask-modal-row-top">
+                <input
+                  type="text"
+                  className="input subtask-input"
+                  value={s.title}
+                  onChange={(e) => update(s.id, { title: e.target.value })}
+                  placeholder={t('createTodo.subtaskName')}
+                />
+                <button type="button" className="btn btn-sm subtask-remove" onClick={() => remove(s.id)} aria-label={t('detail.delete')}>×</button>
+              </div>
               <input
                 type="datetime-local"
                 className="input subtask-ddl"
                 value={s.ddl ? isoToLocalDatetimeLocal(s.ddl) : ''}
                 onChange={(e) => update(s.id, { ddl: e.target.value ? new Date(e.target.value).toISOString() : '' })}
               />
-              <label className="subtask-done">
-                <input
-                  type="checkbox"
-                  checked={s.completed}
-                  onChange={(e) => update(s.id, { completed: e.target.checked })}
-                />
-                <span>{t('createTodo.subtaskCompleted')}</span>
-              </label>
-              <button type="button" className="btn btn-sm" onClick={() => remove(s.id)} aria-label={t('detail.delete')}>×</button>
+              <div className="subtask-modal-row-bottom">
+                <label className="subtask-done">
+                  <input
+                    type="checkbox"
+                    checked={s.completed}
+                    onChange={(e) => update(s.id, { completed: e.target.checked })}
+                  />
+                  <span>{t('createTodo.subtaskCompleted')}</span>
+                </label>
+              </div>
             </div>
           ))}
           <button type="button" className="btn btn-secondary" onClick={add}>

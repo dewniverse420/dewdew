@@ -30,12 +30,13 @@ export default function CreateGoal() {
       goal.year = year
       goal.month = month
     }
+    /* custom 仅用 title，无 year/month */
     const list = getGoals()
     setGoals([goal, ...list])
     navigate('/todos')
   }
 
-  const goalTypes: GoalType[] = ['major', 'year', 'month']
+  const goalTypes: GoalType[] = ['major', 'year', 'month', 'custom']
 
   return (
     <section className="page create-todo-page">

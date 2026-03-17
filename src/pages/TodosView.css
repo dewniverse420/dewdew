@@ -258,6 +258,144 @@
   margin-bottom: 10px;
 }
 
+.todos-item-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.todos-item-block:has(.todos-sublist) .todos-item-wrap .todos-item {
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.todos-sublist {
+  list-style: none;
+  margin: 0;
+  padding: 8px 16px 12px 44px;
+  background: var(--color-bg);
+  border-radius: 0 0 var(--radius) var(--radius);
+  border: 1px solid var(--color-border);
+  border-top: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.todos-subitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  padding: 4px 0;
+}
+
+.todos-subitem--done .todos-subitem-title {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.todos-subitem-check {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.todos-subitem-check:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.todos-subitem-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.todos-subitem-ddl {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* 手机端右滑显示编辑/删除 */
+.todos-swipe {
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+.todos-swipe-inner {
+  display: flex;
+  flex-direction: row;
+  width: calc(100% + 88px);
+  transition: transform 0.2s ease-out;
+}
+
+.todos-swipe-actions {
+  flex-shrink: 0;
+  width: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+  padding: 8px;
+  background: var(--color-bg);
+  border-radius: var(--radius) 0 0 var(--radius);
+  border: 1px solid var(--color-border);
+  border-right: none;
+}
+
+.todos-swipe-btn {
+  padding: 8px 10px;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.todos-swipe-edit:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.todos-swipe-delete {
+  color: var(--color-danger, #dc2626);
+  border-color: var(--color-danger, #dc2626);
+}
+
+.todos-swipe-delete:hover {
+  background: var(--color-danger, #dc2626);
+  color: #fff;
+}
+
+.todos-swipe-content {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (min-width: 769px) {
+  .todos-swipe-inner {
+    width: 100%;
+  }
+  .todos-swipe-actions {
+    display: none;
+  }
+}
+
 .todos-item {
   display: block;
   padding: 14px 16px;

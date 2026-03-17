@@ -51,8 +51,11 @@ export function requestNotificationPermission(): Promise<NotificationPermission>
   return Notification.requestPermission()
 }
 
+/** 提醒窗口内仅在前 N 毫秒内发送，避免过早推送（约 2 分钟） */
+const REMINDER_SEND_WINDOW_MS = 2 * 60 * 1000
+
 /**
- * 检查待办 DDL：按每条待办的 reminderBeforeMinutes 在进入对应窗口且未发过时发送系统通知。
+ * 检查待办 DDL：在「提前 N 分钟」的时间点附近（2 分钟内）且未发过时发送系统通知。
  * 仅当总开关开启且通知权限为 granted 时执行。
  */
 export function checkAndNotify(lang: 'zh' | 'en'): void {
@@ -63,6 +66,7 @@ export function checkAndNotify(lang: 'zh' | 'en'): void {
   const now = Date.now()
   const sent = getSentMap()
   let changed = false
+  const locale = lang === 'zh' ? 'zh-CN' : 'en-US'
 
   for (const todo of todos) {
     const ddl = todo.ddl?.trim()
@@ -84,11 +88,15 @@ export function checkAndNotify(lang: 'zh' | 'en'): void {
         continue
       }
       if (now < windowStart) continue
+      const inSendWindow = now <= windowStart + REMINDER_SEND_WINDOW_MS
+      if (!inSendWindow) continue
       const key = sentKey(todo.id, minutes, ddl)
       if (sent[key]) continue
 
       const title = lang === 'zh' ? '待办即将到期' : 'Todo due soon'
-      const body = todo.title || (lang === 'zh' ? '无标题' : 'No title')
+      const ddlFormatted = new Date(ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      const titlePart = todo.title?.trim() || (lang === 'zh' ? '无标题' : 'No title')
+      const body = lang === 'zh' ? `${titlePart} · 截止 ${ddlFormatted}` : `${titlePart} · Due ${ddlFormatted}`
       try {
         new Notification(title, {
           body,
