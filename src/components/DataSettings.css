@@ -54,15 +54,14 @@
   .data-settings-panel {
     position: fixed;
     left: 50%;
-    top: 50%;
+    top: calc(52px + env(safe-area-inset-top));
     right: auto;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
     min-width: 0;
     width: calc(100vw - 32px);
     max-width: 320px;
-    max-height: min(80vh, 75dvh);
+    max-height: calc(100dvh - 52px - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
     overflow-y: auto;
-    margin-top: env(safe-area-inset-top);
     padding-left: 16px;
     padding-right: 16px;
     padding-bottom: max(16px, env(safe-area-inset-bottom));
