@@ -922,9 +922,10 @@
   text-decoration: underline;
 }
 
-@media (max-width: 500px) {
+@media (max-width: 768px) {
   .todos-tags-layout {
     flex-direction: column;
+    width: 100%;
   }
 
   .todos-sidebar {
@@ -934,6 +935,26 @@
     width: 100%;
   }
 
+  .todos-main {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .todos-list {
+    width: 100%;
+  }
+
+  .todos-list li {
+    width: 100%;
+  }
+
+  .todos-item-wrap {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 500px) {
   .todos-calendar-week-grid {
     grid-template-columns: repeat(7, minmax(72px, 1fr));
     overflow-x: auto;
