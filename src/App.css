@@ -28,6 +28,20 @@
   min-width: 0;
 }
 
+.app-logo-btn {
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.app-logo-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
 .app-logo {
   width: 36px;
   height: 36px;

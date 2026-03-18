@@ -180,12 +180,20 @@ function App() {
       <header className="app-header">
         <div className="container app-header-inner">
           <div className="app-brand-wrap">
-            <img
-              src={`${import.meta.env.BASE_URL}logo.png`}
-              alt=""
-              className="app-logo"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-            />
+            <button
+              type="button"
+              className="app-logo-btn"
+              onClick={() => window.location.reload()}
+              aria-label={t('app.reload')}
+              title={t('app.reload')}
+            >
+              <img
+                src={`${import.meta.env.BASE_URL}logo.png`}
+                alt=""
+                className="app-logo"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            </button>
             <div className="app-brand">
               <h1 className="app-title">{t('app.title')}</h1>
               <p className="app-tagline">{t('app.tagline')}</p>

@@ -8,6 +8,7 @@ const messages: Record<Lang, Record<string, string>> = {
   zh: {
     'app.title': 'Dewdew',
     'app.tagline': '你的私人小秘书',
+    'app.reload': '刷新应用',
     'nav.todos': '计划',
     'nav.quickCreate': '快捷创建',
     'nav.create': '创建',
@@ -344,6 +345,7 @@ const messages: Record<Lang, Record<string, string>> = {
   en: {
     'app.title': 'Dewdew',
     'app.tagline': 'Your personal secretary',
+    'app.reload': 'Reload app',
     'nav.todos': 'Plan',
     'nav.quickCreate': 'Quick create',
     'nav.create': 'Create',
