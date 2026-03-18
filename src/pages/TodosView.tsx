@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
-import { getTodos, setTodos, getHabits, getAllTags, getGoals, getContacts } from '../lib/store'
+import { getTodos, setTodos, getHabits, setHabits, getAllTags, getGoals, getContacts } from '../lib/store'
 import { getSubtaskProgress, isTodoCompleted } from '../lib/todoCompletion'
 import ReflectionModal from '../components/ReflectionModal'
 import type { TodoItem, HabitItem, Goal, Contact, HabitReminder } from '../types'
@@ -97,6 +97,10 @@ type HabitOccurrence = {
   dayKeyLocal: string
 }
 
+function habitOccKey(dayKeyLocal: string, reminder: HabitReminder): string {
+  return `${dayKeyLocal}|${reminder.id}|${reminder.time}`
+}
+
 function getHabitOccurrencesForDay(habits: HabitItem[], dayKeyLocal: string): HabitOccurrence[] {
   const weekday = getLocalWeekdayFromDayKey(dayKeyLocal)
   const [y, mo, da] = dayKeyLocal.split('-').map((x) => Number(x))
@@ -168,7 +172,17 @@ function goalDisplayLabel(g: Goal, t: (k: string) => string, lang: string): stri
   return g.title
 }
 
-function HabitOccurrenceRow({ occ, locale }: { occ: HabitOccurrence; locale: string }) {
+function HabitOccurrenceRow({
+  occ,
+  locale,
+  checked,
+  onToggleChecked,
+}: {
+  occ: HabitOccurrence
+  locale: string
+  checked: boolean
+  onToggleChecked: () => void
+}) {
   return (
     <div className="todos-item-block">
       <div className="todos-item-wrap todos-item-wrap--habit">
@@ -179,6 +193,20 @@ function HabitOccurrenceRow({ occ, locale }: { occ: HabitOccurrence; locale: str
             {occ.habit.tags.length > 0 && ` · ${occ.habit.tags.join('、')}`}
           </span>
         </Link>
+        <span className="todos-item-right" onClick={(e) => e.preventDefault()}>
+          <button
+            type="button"
+            className="todos-item-check"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onToggleChecked()
+            }}
+            aria-label={checked ? '取消打钩' : '打钩'}
+          >
+            {checked ? '✓' : '○'}
+          </button>
+        </span>
       </div>
     </div>
   )
@@ -283,6 +311,12 @@ export default function TodosView() {
   const updateTodos = (fn: (prev: TodoItem[]) => TodoItem[]) => {
     const next = fn(getTodos())
     setTodos(next)
+    setStoreRevision((r) => r + 1)
+  }
+
+  const updateHabits = (fn: (prev: HabitItem[]) => HabitItem[]) => {
+    const next = fn(getHabits())
+    setHabits(next)
     setStoreRevision((r) => r + 1)
   }
 
@@ -550,7 +584,22 @@ export default function TodosView() {
               ))}
               {todayHabitOcc.map((occ) => (
                 <li key={`h-${occ.habit.id}-${occ.reminder.id}-${occ.timeIso}`}>
-                  <HabitOccurrenceRow occ={occ} locale={locale} />
+                  <HabitOccurrenceRow
+                    occ={occ}
+                    locale={locale}
+                    checked={Boolean(occ.habit.checks?.[habitOccKey(occ.dayKeyLocal, occ.reminder)])}
+                    onToggleChecked={() => {
+                      const key = habitOccKey(occ.dayKeyLocal, occ.reminder)
+                      updateHabits((list) =>
+                        list.map((h) => {
+                          if (h.id !== occ.habit.id) return h
+                          const prev = h.checks ?? {}
+                          const next = { ...prev, [key]: !prev[key] }
+                          return { ...h, checks: next }
+                        })
+                      )
+                    }}
+                  />
                 </li>
               ))}
             </ul>
@@ -785,7 +834,7 @@ export default function TodosView() {
                             ))}
                             {habitOcc.map((occ) => (
                               <li key={`h-${occ.habit.id}-${occ.reminder.id}-${occ.timeIso}`}>
-                                <Link to={`/item/habit/${occ.habit.id}`} className="todos-axis-event todos-axis-event--habit">
+                                <Link to={`/item/habit/${occ.habit.id}`} className={`todos-axis-event todos-axis-event--habit ${occ.habit.checks?.[habitOccKey(occ.dayKeyLocal, occ.reminder)] ? 'is-checked' : ''}`}>
                                   <span className="todos-axis-event-time">{formatTime(occ.timeIso, locale)}</span>
                                   <span className="todos-axis-event-title">{occ.habit.title}</span>
                                 </Link>
@@ -1025,7 +1074,7 @@ export default function TodosView() {
                               <Link
                                 key={`h-${occ.habit.id}-${occ.reminder.id}-${occ.timeIso}`}
                                 to={`/item/habit/${occ.habit.id}`}
-                                className="todos-calendar-event todos-calendar-event--habit"
+                                className={`todos-calendar-event todos-calendar-event--habit ${occ.habit.checks?.[habitOccKey(occ.dayKeyLocal, occ.reminder)] ? 'is-checked' : ''}`}
                                 style={{
                                   top: getEventTop(occ.timeIso),
                                   height: SLOT_HEIGHT - 4,

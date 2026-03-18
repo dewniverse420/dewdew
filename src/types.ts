@@ -77,6 +77,11 @@ export interface HabitItem {
   title: string
   /** 习惯提醒设定（可多条） */
   reminders: HabitReminder[]
+  /**
+   * 习惯打钩记录：按「某天 + 某条提醒」存储。
+   * key 建议形如：`${YYYY-MM-DD}|${reminderId}|${HH:mm}`
+   */
+  checks?: Record<string, boolean>
   tags: string[]
   goalId?: string
   description: string
