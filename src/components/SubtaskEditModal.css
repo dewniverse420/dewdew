@@ -81,6 +81,13 @@
   box-sizing: border-box;
 }
 
+.subtask-modal-row .subtask-clear-ddl {
+  width: 100%;
+  justify-content: center;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+}
+
 .subtask-modal-row-bottom {
   display: flex;
   align-items: center;

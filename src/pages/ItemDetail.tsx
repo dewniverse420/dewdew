@@ -101,7 +101,7 @@ export default function ItemDetail() {
               {item.subtasks.map((s) => (
                 <li key={s.id} className={`detail-subtask ${s.completed ? 'detail-subtask--done' : ''}`}>
                   <span className="detail-subtask-title">{s.title}</span>
-                  {s.ddl && <span className="detail-subtask-ddl">{new Date(s.ddl).toLocaleString(locale)}</span>}
+                  <span className="detail-subtask-ddl">{new Date((s.ddl || item.ddl)).toLocaleString(locale)}</span>
                   <span className="detail-subtask-status">{s.completed ? '✓' : '○'}</span>
                 </li>
               ))}

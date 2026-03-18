@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
 import { getTodos, setTodos, getHabits, setHabits, getAllTags, getGoals, getContacts } from '../lib/store'
 import { getSubtaskProgress, isTodoCompleted } from '../lib/todoCompletion'
+import { getDailyCompletionMap, setDailyCompletion } from '../lib/dailyCompletion'
 import ReflectionModal from '../components/ReflectionModal'
 import type { TodoItem, HabitItem, Goal, Contact, HabitReminder } from '../types'
 import './TodosView.css'
@@ -32,6 +33,11 @@ function toDateKeyLocalFromDate(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
+}
+
+function compareDayKey(a: string, b: string): number {
+  if (a === b) return 0
+  return a < b ? -1 : 1
 }
 
 /** 待办紧迫度 0–1：越接近 DDL 越高，已过 DDL 为 1 */
@@ -172,6 +178,19 @@ function goalDisplayLabel(g: Goal, t: (k: string) => string, lang: string): stri
   return g.title
 }
 
+function computeDayCompletion(dayKeyLocal: string, todos: TodoItem[], habits: HabitItem[]): { done: number; total: number; percent: number } {
+  const dayTodos = todos.filter((t) => toDateKeyLocal(getTodoTime(t)) === dayKeyLocal)
+  const todoTotal = dayTodos.length
+  const todoDone = dayTodos.filter((t) => isTodoCompleted(t)).length
+  const habitOcc = getHabitOccurrencesForDay(habits, dayKeyLocal)
+  const habitTotal = habitOcc.length
+  const habitDone = habitOcc.filter((occ) => Boolean(occ.habit.checks?.[habitOccKey(occ.dayKeyLocal, occ.reminder)])).length
+  const total = todoTotal + habitTotal
+  const done = todoDone + habitDone
+  const percent = total ? Math.round((done / total) * 100) : 0
+  return { done, total, percent }
+}
+
 function HabitOccurrenceRow({
   occ,
   locale,
@@ -260,7 +279,7 @@ function TodoItemRow({
           {todo.subtasks.map((s) => (
             <li key={s.id} className={`todos-subitem ${s.completed ? 'todos-subitem--done' : ''}`}>
               <span className="todos-subitem-title">{s.title}</span>
-              {s.ddl && <span className="todos-subitem-ddl">{new Date(s.ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
+              <span className="todos-subitem-ddl">{new Date((s.ddl || todo.ddl)).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
               <button
                 type="button"
                 className="todos-subitem-check"
@@ -396,6 +415,7 @@ export default function TodosView() {
   )
 
   const todayKeyLocalStr = todayKeyLocal()
+  const completionMap = useMemo(() => getDailyCompletionMap(), [storeRevision])
   const todayTodos = useMemo(
     () =>
       [...visibleTodos]
@@ -918,6 +938,13 @@ export default function TodosView() {
                         const birthdayCount = getBirthdaysOnDay(dayKey, contacts).length
                         const dayCount = todoCount + habitCount + birthdayCount
                         const dayIntensity = dayCount / maxMonthTodos
+                        const recordable = compareDayKey(localKey, todayKeyLocalStr) <= 0
+                        const stored = completionMap[localKey]
+                        const computed = recordable ? computeDayCompletion(localKey, visibleTodos, habits) : null
+                        const percent = stored?.percent ?? computed?.percent ?? 0
+                        if (recordable && computed && (!stored || stored.total !== computed.total || stored.done !== computed.done)) {
+                          setDailyCompletion(localKey, { ...computed, updatedAt: new Date().toISOString() })
+                        }
                         return (
                           <button
                             key={dayKey}
@@ -928,6 +955,11 @@ export default function TodosView() {
                             title={dayCount > 0 ? (todoCount ? t('todos.calendar.todoCount', { n: String(todoCount) }) : '') + (habitCount ? ((todoCount ? ' · ' : '') + t('detail.type.habit') + ` ${habitCount}`) : '') + (birthdayCount ? ((todoCount || habitCount ? ' · ' : '') + t('todos.calendar.birthdayCount', { n: String(birthdayCount) })) : '') : undefined}
                           >
                             <span className="todos-calendar-day-cell-bg" aria-hidden />
+                            {recordable && (stored || computed) && (
+                              <span className="todos-calendar-day-percent" aria-label={`完成度 ${percent}%`}>
+                                {percent}%
+                              </span>
+                            )}
                             <span className="todos-calendar-day-num">{new Date(dayKey).getDate()}</span>
                             {dayCount > 0 && (
                               <span className="todos-calendar-day-dots">

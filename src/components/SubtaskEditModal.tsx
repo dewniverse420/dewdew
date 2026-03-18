@@ -58,7 +58,7 @@ export default function SubtaskEditModal({ subtasks: initial, onSave, onClose }:
   const add = () => {
     setList((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), title: '', ddl: '', completed: false },
+      { id: crypto.randomUUID(), title: '', ddl: undefined, completed: false },
     ])
   }
 
@@ -96,8 +96,16 @@ export default function SubtaskEditModal({ subtasks: initial, onSave, onClose }:
                 type="datetime-local"
                 className="input subtask-ddl"
                 value={s.ddl ? isoToLocalDatetimeLocal(s.ddl) : ''}
-                onChange={(e) => update(s.id, { ddl: e.target.value ? new Date(e.target.value).toISOString() : '' })}
+                onChange={(e) => update(s.id, { ddl: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
               />
+              <button
+                type="button"
+                className="btn btn-outline subtask-clear-ddl"
+                onClick={() => update(s.id, { ddl: undefined })}
+                disabled={!s.ddl}
+              >
+                {t('createTodo.subtaskUseParentTime')}
+              </button>
               <div className="subtask-modal-row-bottom">
                 <label className="subtask-done">
                   <input
