@@ -5,6 +5,7 @@ import { recognizeTextFromImage, textToTodoPrefill } from './lib/ocr'
 import Spinner from './components/Spinner'
 import Create from './pages/Create'
 import CreateTodo from './pages/CreateTodo'
+import CreateHabit from './pages/CreateHabit'
 import CreateGoal from './pages/CreateGoal'
 import CreateQuickNote from './pages/CreateQuickNote'
 import CreateFinance from './pages/CreateFinance'
@@ -264,11 +265,13 @@ function App() {
             <Route path="/todos" element={<TodosView />} />
             <Route path="/create" element={<Create />} />
             <Route path="/create/todo" element={<CreateTodo />} />
+            <Route path="/create/habit" element={<CreateHabit />} />
             <Route path="/create/goal" element={<CreateGoal />} />
             <Route path="/create/quicknote" element={<CreateQuickNote />} />
             <Route path="/create/finance" element={<CreateFinance />} />
             <Route path="/create/contact" element={<CreateContact />} />
             <Route path="/edit/todo/:id" element={<CreateTodo />} />
+            <Route path="/edit/habit/:id" element={<CreateHabit />} />
             <Route path="/edit/quicknote/:id" element={<CreateQuickNote />} />
             <Route path="/edit/contact/:id" element={<CreateContact />} />
             <Route path="/edit/finance/:id" element={<CreateFinance />} />
@@ -282,17 +285,17 @@ function App() {
       </main>
       <nav className="bottom-nav" aria-label={t('nav.mainAriaLabel')}>
         <div className="container nav-inner">
-          <NavLink to="/todos" end className={({ isActive }) => `nav-item nav-item--line-icon ${isActive ? 'active' : ''}`} aria-label={t('nav.todos')}>
+          <NavLink to="/todos" end className={({ isActive }) => `nav-item nav-item--line-icon nav-order-1 ${isActive ? 'active' : ''}`} aria-label={t('nav.todos')}>
             <span className="nav-line-icon" aria-hidden>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
             </span>
           </NavLink>
-          <NavLink to="/notes" end className={({ isActive }) => `nav-item nav-item--line-icon ${isActive ? 'active' : ''}`} aria-label={t('nav.notes')}>
+          <NavLink to="/notes" end className={({ isActive }) => `nav-item nav-item--line-icon nav-order-2 ${isActive ? 'active' : ''}`} aria-label={t('nav.notes')}>
             <span className="nav-line-icon" aria-hidden>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
             </span>
           </NavLink>
-          <div className="nav-camera-wrap" ref={cameraWrapRef}>
+          <div className="nav-camera-wrap nav-order-3" ref={cameraWrapRef}>
             <button
               type="button"
               className="nav-item nav-item--icon"
@@ -321,16 +324,16 @@ function App() {
           </div>
           <NavLink
             to="/create"
-            className={({ isActive }) => `nav-item nav-item--icon ${isActive ? 'active' : ''}`}
+            className={({ isActive }) => `nav-item nav-item--icon nav-item--plus-center nav-order-4 ${isActive ? 'active' : ''}`}
             aria-label={t('nav.create')}
           >
-            <span className="nav-icon-circle" aria-hidden>
+            <span className="nav-icon-circle nav-icon-circle--plus" aria-hidden>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </span>
           </NavLink>
           <button
             type="button"
-            className="nav-item nav-item--icon"
+            className="nav-item nav-item--icon nav-order-5"
             onClick={handleVoiceClick}
             disabled={mediaLoading}
             aria-label={t('ocr.fromVoice')}
@@ -342,12 +345,12 @@ function App() {
               </svg>
             </span>
           </button>
-          <NavLink to="/finance" end className={({ isActive }) => `nav-item nav-item--line-icon ${isActive ? 'active' : ''}`} aria-label={t('nav.finance')}>
+          <NavLink to="/finance" end className={({ isActive }) => `nav-item nav-item--line-icon nav-order-6 ${isActive ? 'active' : ''}`} aria-label={t('nav.finance')}>
             <span className="nav-line-icon" aria-hidden>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </span>
           </NavLink>
-          <NavLink to="/contacts" end className={({ isActive }) => `nav-item nav-item--line-icon ${isActive ? 'active' : ''}`} aria-label={t('nav.contacts')}>
+          <NavLink to="/contacts" end className={({ isActive }) => `nav-item nav-item--line-icon nav-order-7 ${isActive ? 'active' : ''}`} aria-label={t('nav.contacts')}>
             <span className="nav-line-icon" aria-hidden>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </span>

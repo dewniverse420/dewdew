@@ -24,6 +24,13 @@ export default function Create() {
             <span className="create-card-hint">{t('create.todo.hint')}</span>
           </div>
         </Link>
+        <Link to="/create/habit" className="create-card create-card--habit">
+          <span className="create-card-icon">✅</span>
+          <div className="create-card-body">
+            <span className="create-card-label">{t('create.habit')}</span>
+            <span className="create-card-hint">{t('create.habit.hint')}</span>
+          </div>
+        </Link>
         <Link to="/create/quicknote" className="create-card create-card--quicknote">
           <span className="create-card-icon">✏️</span>
           <div className="create-card-body">

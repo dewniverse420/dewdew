@@ -230,6 +230,15 @@
   gap: 4px;
 }
 
+/* 强制底部导航顺序：待办 | 随记 | 相机 | 加号 | 麦克风 | 收支 | 人脉 */
+.nav-order-1 { order: 1; }
+.nav-order-2 { order: 2; }
+.nav-order-3 { order: 3; }
+.nav-order-4 { order: 4; }
+.nav-order-5 { order: 5; }
+.nav-order-6 { order: 6; }
+.nav-order-7 { order: 7; }
+
 .nav-item {
   display: flex;
   flex-direction: column;
@@ -315,7 +324,7 @@
   border-radius: 50%;
   background: var(--color-primary);
   color: white;
-  box-shadow: 0 2px 10px var(--color-primary-light);
+  box-shadow: none;
   transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
 }
 
@@ -325,10 +334,28 @@
   flex-shrink: 0;
 }
 
+/* 加号按钮圆圈比相机、麦克风稍大 */
+.nav-icon-circle--plus {
+  width: 54px;
+  height: 54px;
+}
+
+.nav-icon-circle--plus svg {
+  width: 30px;
+  height: 30px;
+}
+
 .nav-item--icon:hover .nav-icon-circle {
   background: var(--color-primary-hover);
   transform: scale(1.05);
-  box-shadow: 0 4px 14px var(--color-primary-light);
+  box-shadow: none;
+}
+
+/* 进入创建页时：中间加号不要出现矩形底色 */
+.nav-item--plus-center,
+.nav-item--plus-center:hover,
+.nav-item--plus-center.active {
+  background: transparent !important;
 }
 
 .nav-camera-wrap {

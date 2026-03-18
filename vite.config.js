@@ -20,8 +20,8 @@ export default defineConfig({
                 scope: basePath,
                 start_url: basePath,
                 icons: [
-                    { src: (basePath === '/' ? '/' : basePath) + 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
-                    { src: (basePath === '/' ? '/' : basePath) + 'logo.png', sizes: '192x192 512x512', type: 'image/png', purpose: 'any maskable' }
+                    { src: (basePath === '/' ? '/' : basePath) + 'logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+                    { src: (basePath === '/' ? '/' : basePath) + 'logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
                 ]
             },
             workbox: {

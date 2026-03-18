@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
-import { getTodos, setTodos, getAllTags, getGoals, getContacts } from '../lib/store'
+import { getTodos, setTodos, getHabits, getAllTags, getGoals, getContacts } from '../lib/store'
 import { getSubtaskProgress, isTodoCompleted } from '../lib/todoCompletion'
 import ReflectionModal from '../components/ReflectionModal'
-import type { TodoItem, Goal, Contact } from '../types'
+import type { TodoItem, HabitItem, Goal, Contact, HabitReminder } from '../types'
 import './TodosView.css'
 
 type DisplayMode = 'today' | 'tags' | 'timeline' | 'goals'
@@ -25,6 +25,13 @@ function formatTime(iso: string, locale: string): string {
 
 function getTodoTime(t: TodoItem): string {
   return t.ddl || t.createdAt
+}
+
+function toDateKeyLocalFromDate(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 /** 待办紧迫度 0–1：越接近 DDL 越高，已过 DDL 为 1 */
@@ -65,6 +72,53 @@ function toDateKeyLocal(iso: string): string {
 function getDayOfWeek(iso: string): number {
   const d = new Date(iso)
   return (d.getDay() + 6) % 7
+}
+
+/** 本地星期：1=周一 ... 7=周日 */
+function getLocalWeekdayFromDayKey(dayKeyLocal: string): number {
+  const d = new Date(dayKeyLocal + 'T12:00:00')
+  const js = d.getDay() // 0..6, Sun=0
+  return js === 0 ? 7 : js
+}
+
+function parseTimeHM(time: string): { h: number; m: number } | null {
+  const m = /^(\d{2}):(\d{2})$/.exec(time)
+  if (!m) return null
+  const h = Number(m[1])
+  const mm = Number(m[2])
+  if (!Number.isFinite(h) || !Number.isFinite(mm) || h < 0 || h > 23 || mm < 0 || mm > 59) return null
+  return { h, m: mm }
+}
+
+type HabitOccurrence = {
+  habit: HabitItem
+  reminder: HabitReminder
+  timeIso: string
+  dayKeyLocal: string
+}
+
+function getHabitOccurrencesForDay(habits: HabitItem[], dayKeyLocal: string): HabitOccurrence[] {
+  const weekday = getLocalWeekdayFromDayKey(dayKeyLocal)
+  const [y, mo, da] = dayKeyLocal.split('-').map((x) => Number(x))
+  if (!y || !mo || !da) return []
+  const out: HabitOccurrence[] = []
+  habits.forEach((habit) => {
+    const reminders = habit.reminders ?? []
+    reminders.forEach((r) => {
+      const hm = parseTimeHM(r.time)
+      if (!hm) return
+      const match =
+        r.repeat === 'everyday'
+          ? true
+          : r.repeat === 'weekly'
+            ? (r.weekdays ?? []).includes(weekday)
+            : false
+      if (!match) return
+      const d = new Date(y, mo - 1, da, hm.h, hm.m, 0, 0)
+      out.push({ habit, reminder: r, timeIso: d.toISOString(), dayKeyLocal })
+    })
+  })
+  return out.sort((a, b) => new Date(a.timeIso).getTime() - new Date(b.timeIso).getTime())
 }
 
 function getMonthDays(year: number, month: number): (string | null)[] {
@@ -112,6 +166,22 @@ function goalDisplayLabel(g: Goal, t: (k: string) => string, lang: string): stri
     return `${g.title} (${g.month}/${g.year})`
   }
   return g.title
+}
+
+function HabitOccurrenceRow({ occ, locale }: { occ: HabitOccurrence; locale: string }) {
+  return (
+    <div className="todos-item-block">
+      <div className="todos-item-wrap todos-item-wrap--habit">
+        <Link to={`/item/habit/${occ.habit.id}`} className="todos-item todos-item--habit">
+          <span className="todos-item-title">{occ.habit.title}</span>
+          <span className="todos-item-meta">
+            {new Date(occ.timeIso).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+            {occ.habit.tags.length > 0 && ` · ${occ.habit.tags.join('、')}`}
+          </span>
+        </Link>
+      </div>
+    </div>
+  )
 }
 
 function TodoItemRow({
@@ -199,10 +269,16 @@ export default function TodosView() {
   const [reflectionTodoId, setReflectionTodoId] = useState<string | null>(null)
   const [storeRevision, setStoreRevision] = useState(0)
   const todos = useMemo(() => getTodos(), [storeRevision])
+  const habits = useMemo(() => getHabits(), [storeRevision])
   const goals = useMemo(() => getGoals(), [storeRevision])
   const contacts = useMemo(() => getContacts(), [storeRevision])
   const visibleTodos = hideCompleted ? todos.filter((t) => !isTodoCompleted(t)) : todos
-  const allTags = useMemo(() => getAllTags(todos), [todos])
+  const allTags = useMemo(() => {
+    const set = new Set<string>()
+    getAllTags(todos).forEach((x) => set.add(x))
+    habits.forEach((h) => (h.tags ?? []).forEach((tag) => set.add(tag)))
+    return Array.from(set).sort()
+  }, [todos, habits])
 
   const updateTodos = (fn: (prev: TodoItem[]) => TodoItem[]) => {
     const next = fn(getTodos())
@@ -261,9 +337,24 @@ export default function TodosView() {
   }, [visibleTodos])
   const ungroupedTodos = useMemo(() => (todosByGoalId.get('__none__') ?? []).sort((a, b) => new Date(getTodoTime(a)).getTime() - new Date(getTodoTime(b)).getTime()), [todosByGoalId])
 
+  const habitsByGoalId = useMemo(() => {
+    const map = new Map<string, HabitItem[]>()
+    habits.forEach((h) => {
+      const id = h.goalId ?? '__none__'
+      if (!map.has(id)) map.set(id, [])
+      map.get(id)!.push(h)
+    })
+    return map
+  }, [habits])
+  const ungroupedHabits = useMemo(() => (habitsByGoalId.get('__none__') ?? []).sort((a, b) => a.title.localeCompare(b.title)), [habitsByGoalId])
+
   const filtered = selectedTag
     ? visibleTodos.filter((item) => item.tags.includes(selectedTag))
     : visibleTodos
+
+  const filteredHabits = selectedTag
+    ? habits.filter((h) => (h.tags ?? []).includes(selectedTag))
+    : habits
 
   const sortedByTime = useMemo(
     () => [...filtered].sort((a, b) => new Date(getTodoTime(a)).getTime() - new Date(getTodoTime(b)).getTime()),
@@ -278,6 +369,7 @@ export default function TodosView() {
         .sort((a, b) => new Date(getTodoTime(a)).getTime() - new Date(getTodoTime(b)).getTime()),
     [visibleTodos, todayKeyLocalStr]
   )
+  const todayHabitOcc = useMemo(() => getHabitOccurrencesForDay(habits, todayKeyLocalStr), [habits, todayKeyLocalStr])
   const todayCompleted = useMemo(() => todayTodos.filter((t) => isTodoCompleted(t)).length, [todayTodos])
   const todayTotal = todayTodos.length
   const todayPercent = todayTotal ? Math.round((todayCompleted / todayTotal) * 100) : 0
@@ -292,10 +384,19 @@ export default function TodosView() {
     return map
   }, [sortedByTime])
   const dayKeys = useMemo(() => Array.from(byDay.keys()).sort(), [byDay])
+  const axisDayKeys = useMemo(() => {
+    const set = new Set(dayKeys)
+    if (habits.length > 0) set.add(todayKey())
+    return Array.from(set).sort()
+  }, [dayKeys, habits.length])
 
   const calendarTodos = useMemo(() => {
     return sortedByTime.filter((t) => toDateKey(getTodoTime(t)) === calendarDate)
   }, [sortedByTime, calendarDate])
+  const calendarHabits = useMemo(() => {
+    const localKey = toDateKeyLocalFromDate(new Date(calendarDate + 'T12:00:00'))
+    return getHabitOccurrencesForDay(habits, localKey)
+  }, [habits, calendarDate])
 
   const [year, month] = useMemo(() => {
     const d = new Date(calendarDate)
@@ -308,9 +409,13 @@ export default function TodosView() {
     if (dayKeys.length === 0) return 1
     return Math.max(
       1,
-      ...dayKeys.map((d) => (byDay.get(d)?.length ?? 0) + getBirthdaysOnDay(d, contacts).length)
+      ...dayKeys.map((d) => {
+        const localKey = toDateKeyLocalFromDate(new Date(d + 'T12:00:00'))
+        const habitCount = getHabitOccurrencesForDay(habits, localKey).length
+        return (byDay.get(d)?.length ?? 0) + habitCount + getBirthdaysOnDay(d, contacts).length
+      })
     )
-  }, [monthDays, byDay, contacts])
+  }, [monthDays, byDay, contacts, habits])
   const weekStart = useMemo(() => getWeekStart(calendarDate), [calendarDate])
   const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart])
 
@@ -425,7 +530,7 @@ export default function TodosView() {
               {t('todos.today.progress', { done: String(todayCompleted), total: String(todayTotal), percent: String(todayPercent) })}
             </p>
           </div>
-          {todayTodos.length === 0 ? (
+          {todayTodos.length === 0 && todayHabitOcc.length === 0 ? (
             <p className="empty-hint">{t('todos.today.empty')}</p>
           ) : (
             <ul className="todos-list">
@@ -443,6 +548,11 @@ export default function TodosView() {
                     </TodoItemRow>
                 </li>
               ))}
+              {todayHabitOcc.map((occ) => (
+                <li key={`h-${occ.habit.id}-${occ.reminder.id}-${occ.timeIso}`}>
+                  <HabitOccurrenceRow occ={occ} locale={locale} />
+                </li>
+              ))}
             </ul>
           )}
         </div>
@@ -455,7 +565,7 @@ export default function TodosView() {
               {t('todos.addGoal')}
             </Link>
           </div>
-          {goals.length === 0 && todos.length === 0 ? (
+          {goals.length === 0 && todos.length === 0 && habits.length === 0 ? (
             <p className="empty-hint">{t('todos.empty.noGoalOrTodo')}</p>
           ) : (
             <>
@@ -473,10 +583,11 @@ export default function TodosView() {
                         <h3 className="todos-goals-section-title">{typeLabel}</h3>
                         {list.map((goal) => {
                           const goalTodos = (todosByGoalId.get(goal.id) ?? []).sort((a, b) => new Date(getTodoTime(a)).getTime() - new Date(getTodoTime(b)).getTime())
+                          const goalHabits = (habitsByGoalId.get(goal.id) ?? []).sort((a, b) => a.title.localeCompare(b.title))
                           return (
                             <div key={goal.id} className="todos-goals-block">
                               <h4 className="todos-goals-block-title">{goalDisplayLabel(goal, t, lang)}</h4>
-                              {goalTodos.length === 0 ? (
+                              {goalTodos.length === 0 && goalHabits.length === 0 ? (
                                 <p className="todos-goals-empty">{t('todos.empty.goalEmpty')}</p>
                               ) : (
                                 <ul className="todos-list">
@@ -494,6 +605,20 @@ export default function TodosView() {
                                         </TodoItemRow>
                                     </li>
                                   ))}
+                                  {goalHabits.map((h) => (
+                                    <li key={h.id}>
+                                      <div className="todos-item-block">
+                                        <div className="todos-item-wrap todos-item-wrap--habit">
+                                          <Link to={`/item/habit/${h.id}`} className="todos-item todos-item--habit">
+                                            <span className="todos-item-title">{h.title}</span>
+                                            <span className="todos-item-meta">
+                                              {h.tags?.length ? h.tags.join('、') : ''}
+                                            </span>
+                                          </Link>
+                                        </div>
+                                      </div>
+                                    </li>
+                                  ))}
                                 </ul>
                               )}
                             </div>
@@ -504,7 +629,7 @@ export default function TodosView() {
                   })}
                 </div>
               )}
-              {ungroupedTodos.length > 0 && (
+              {(ungroupedTodos.length > 0 || ungroupedHabits.length > 0) && (
                 <div className="todos-goals-section">
                   <h3 className="todos-goals-section-title">{t('todos.empty.ungrouped')}</h3>
                   <ul className="todos-list">
@@ -520,6 +645,20 @@ export default function TodosView() {
                               </span>
                             </Link>
                           </TodoItemRow>
+                      </li>
+                    ))}
+                    {ungroupedHabits.map((h) => (
+                      <li key={h.id}>
+                        <div className="todos-item-block">
+                          <div className="todos-item-wrap todos-item-wrap--habit">
+                            <Link to={`/item/habit/${h.id}`} className="todos-item todos-item--habit">
+                              <span className="todos-item-title">{h.title}</span>
+                              <span className="todos-item-meta">
+                                {h.tags?.length ? h.tags.join('、') : ''}
+                              </span>
+                            </Link>
+                          </div>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -555,7 +694,7 @@ export default function TodosView() {
             )}
           </aside>
           <div className="todos-main">
-            {sortedByTime.length === 0 ? (
+            {sortedByTime.length === 0 && filteredHabits.length === 0 ? (
               <p className="empty-hint">
                 {selectedTag ? t('todos.empty.noTagTodo', { tag: selectedTag }) : t('todos.empty.noTodos')}
               </p>
@@ -573,6 +712,20 @@ export default function TodosView() {
                           </span>
                         </Link>
                       </TodoItemRow>
+                  </li>
+                ))}
+                {filteredHabits.map((h) => (
+                  <li key={h.id}>
+                    <div className="todos-item-block">
+                      <div className="todos-item-wrap todos-item-wrap--habit">
+                        <Link to={`/item/habit/${h.id}`} className="todos-item todos-item--habit">
+                          <span className="todos-item-title">{h.title}</span>
+                          <span className="todos-item-meta">
+                            {h.tags?.length ? h.tags.join('、') : ''}
+                          </span>
+                        </Link>
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -602,19 +755,24 @@ export default function TodosView() {
 
           {timelineSubMode === 'axis' && (
             <>
-              {sortedByTime.length === 0 ? (
+              {sortedByTime.length === 0 && habits.length === 0 ? (
                 <p className="empty-hint">{t('todos.empty.noTodosCreate')}</p>
               ) : (
                 <div className="todos-axis-wrap">
                   <div className="todos-axis-line" aria-hidden />
                   <div className="todos-axis-content">
-                    {dayKeys.map((day) => (
+                    {axisDayKeys.map((day) => {
+                      const todoList = byDay.get(day) ?? []
+                      const localKey = toDateKeyLocalFromDate(new Date(day + 'T12:00:00'))
+                      const habitOcc = getHabitOccurrencesForDay(habits, localKey)
+                      if (todoList.length === 0 && habitOcc.length === 0) return null
+                      return (
                       <div key={day} className="todos-axis-day">
                         <div className="todos-axis-dot" />
                         <div className="todos-axis-day-body">
                           <h3 className="todos-axis-day-title">{formatDay(day + 'T12:00:00', locale)}</h3>
                           <ul className="todos-axis-event-list">
-                            {byDay.get(day)!.map((item) => (
+                            {todoList.map((item) => (
                               <li key={item.id}>
                                   <TodoItemRow todo={item} onToggleComplete={handleToggleComplete} onToggleSubtask={handleToggleSubtask}>
                                     <Link to={`/item/todo/${item.id}`} className="todos-axis-event">
@@ -625,10 +783,19 @@ export default function TodosView() {
                                   </TodoItemRow>
                               </li>
                             ))}
+                            {habitOcc.map((occ) => (
+                              <li key={`h-${occ.habit.id}-${occ.reminder.id}-${occ.timeIso}`}>
+                                <Link to={`/item/habit/${occ.habit.id}`} className="todos-axis-event todos-axis-event--habit">
+                                  <span className="todos-axis-event-time">{formatTime(occ.timeIso, locale)}</span>
+                                  <span className="todos-axis-event-title">{occ.habit.title}</span>
+                                </Link>
+                              </li>
+                            ))}
                           </ul>
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -697,8 +864,10 @@ export default function TodosView() {
                         <div key={`e-${i}`} className="todos-calendar-day-cell empty" />
                       ) : (() => {
                         const todoCount = byDay.get(dayKey)?.length ?? 0
+                        const localKey = toDateKeyLocalFromDate(new Date(dayKey + 'T12:00:00'))
+                        const habitCount = getHabitOccurrencesForDay(habits, localKey).length
                         const birthdayCount = getBirthdaysOnDay(dayKey, contacts).length
-                        const dayCount = todoCount + birthdayCount
+                        const dayCount = todoCount + habitCount + birthdayCount
                         const dayIntensity = dayCount / maxMonthTodos
                         return (
                           <button
@@ -707,7 +876,7 @@ export default function TodosView() {
                             className={`todos-calendar-day-cell ${dayKey === todayKey() ? 'today' : ''}`}
                             style={{ ['--day-intensity' as string]: String(dayIntensity) }}
                             onClick={() => goToDay(dayKey)}
-                            title={dayCount > 0 ? (todoCount ? t('todos.calendar.todoCount', { n: String(todoCount) }) : '') + (birthdayCount ? (todoCount ? ' · ' : '') + t('todos.calendar.birthdayCount', { n: String(birthdayCount) }) : '') : undefined}
+                            title={dayCount > 0 ? (todoCount ? t('todos.calendar.todoCount', { n: String(todoCount) }) : '') + (habitCount ? ((todoCount ? ' · ' : '') + t('detail.type.habit') + ` ${habitCount}`) : '') + (birthdayCount ? ((todoCount || habitCount ? ' · ' : '') + t('todos.calendar.birthdayCount', { n: String(birthdayCount) })) : '') : undefined}
                           >
                             <span className="todos-calendar-day-cell-bg" aria-hidden />
                             <span className="todos-calendar-day-num">{new Date(dayKey).getDate()}</span>
@@ -772,6 +941,14 @@ export default function TodosView() {
                                 <span className="todos-calendar-week-event-importance">{'!'.repeat(t.importance)}</span>
                                 <span className="todos-calendar-week-event-time">{formatTime(getTodoTime(t), locale)}</span>
                                 <span className="todos-calendar-week-event-title">{t.title}</span>
+                              </Link>
+                            </li>
+                          ))}
+                          {getHabitOccurrencesForDay(habits, toDateKeyLocalFromDate(new Date(dayKey + 'T12:00:00'))).map((occ) => (
+                            <li key={`h-${occ.habit.id}-${occ.reminder.id}-${occ.timeIso}`}>
+                              <Link to={`/item/habit/${occ.habit.id}`} className="todos-calendar-week-event todos-calendar-week-event--habit">
+                                <span className="todos-calendar-week-event-time">{formatTime(occ.timeIso, locale)}</span>
+                                <span className="todos-calendar-week-event-title">{occ.habit.title}</span>
                               </Link>
                             </li>
                           ))}
@@ -844,9 +1021,23 @@ export default function TodosView() {
                                 <span className="todos-calendar-event-title">{t.title}</span>
                               </Link>
                             ))}
+                            {calendarHabits.map((occ) => (
+                              <Link
+                                key={`h-${occ.habit.id}-${occ.reminder.id}-${occ.timeIso}`}
+                                to={`/item/habit/${occ.habit.id}`}
+                                className="todos-calendar-event todos-calendar-event--habit"
+                                style={{
+                                  top: getEventTop(occ.timeIso),
+                                  height: SLOT_HEIGHT - 4,
+                                }}
+                              >
+                                <span className="todos-calendar-event-time">{formatTime(occ.timeIso, locale)}</span>
+                                <span className="todos-calendar-event-title">{occ.habit.title}</span>
+                              </Link>
+                            ))}
                           </div>
                         </div>
-                        {calendarTodos.length === 0 && dayBirthdays.length === 0 && (
+                        {calendarTodos.length === 0 && calendarHabits.length === 0 && dayBirthdays.length === 0 && (
                           <p className="todos-calendar-empty">{t('todos.calendar.empty')}</p>
                         )}
                       </>

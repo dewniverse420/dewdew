@@ -57,6 +57,37 @@ export interface TodoItem {
   createdAt: string
 }
 
+/** 习惯提醒循环 */
+export type HabitRepeat = 'everyday' | 'weekly'
+
+/** 习惯提醒设定（可多条） */
+export interface HabitReminder {
+  id: string
+  repeat: HabitRepeat
+  /** weekly 时生效：1=周一 ... 7=周日 */
+  weekdays?: number[]
+  /** 每次提醒时间（本地时间 HH:mm） */
+  time: string
+}
+
+/** 习惯 */
+export interface HabitItem {
+  id: string
+  type: 'habit'
+  title: string
+  /** 习惯提醒设定（可多条） */
+  reminders: HabitReminder[]
+  tags: string[]
+  goalId?: string
+  description: string
+  location: string
+  /** 关联链接（URL） */
+  link?: string
+  relatedPeople: string[]
+  attachments: Attachment[]
+  createdAt: string
+}
+
 /** 随记 */
 export interface QuickNoteItem {
   id: string
@@ -133,16 +164,24 @@ export interface Contact {
 
 export type TimelineItem = TodoItem | QuickNoteItem
 
-export function isTodo(item: TimelineItem): item is TodoItem {
+/** 任意可按时间排序的条目（用于首页最近、时间轴等） */
+export type TimeSortableItem = TodoItem | QuickNoteItem | HabitItem
+
+export function isTodo(item: TimeSortableItem): item is TodoItem {
   return item.type === 'todo'
 }
 
-export function isQuickNote(item: TimelineItem): item is QuickNoteItem {
+export function isQuickNote(item: TimeSortableItem): item is QuickNoteItem {
   return item.type === 'quicknote'
 }
 
+export function isHabit(item: TimeSortableItem): item is HabitItem {
+  return item.type === 'habit'
+}
+
 /** 获取用于时间轴排序的时间 */
-export function getItemTime(item: TimelineItem): string {
+export function getItemTime(item: TimeSortableItem): string {
   if (isTodo(item)) return item.ddl
+  if (isHabit(item)) return item.createdAt
   return item.time || item.createdAt
 }

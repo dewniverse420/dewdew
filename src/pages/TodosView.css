@@ -32,6 +32,24 @@
   overflow: hidden;
 }
 
+.todos-item-wrap--habit {
+  background: color-mix(in srgb, var(--color-surface) 92%, #10b981 8%);
+  border-left-color: #10b981;
+}
+
+.todos-item--habit .todos-item-importance {
+  display: none;
+}
+
+.todos-calendar-week-event.todos-calendar-week-event--habit {
+  background: rgba(16, 185, 129, 0.12);
+  border-left-color: #10b981;
+}
+
+.todos-calendar-event.todos-calendar-event--habit {
+  background: #10b981;
+}
+
 .todos-item-wrap.todos-item--completed {
   opacity: 0.75;
   background: var(--color-surface);

@@ -18,7 +18,7 @@ import {
   type Unsubscribe,
 } from 'firebase/auth'
 import { getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc } from 'firebase/firestore'
-import type { TodoItem, QuickNoteItem, Goal, FinanceEntry, Contact, FinanceSettings } from '../types'
+import type { TodoItem, HabitItem, QuickNoteItem, Goal, FinanceEntry, Contact, FinanceSettings } from '../types'
 
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -143,6 +143,14 @@ export async function fetchTodos(): Promise<TodoItem[]> {
   return snap.docs.map((d) => d.data() as TodoItem)
 }
 
+/** 从 Firestore 拉取全部习惯 */
+export async function fetchHabits(): Promise<HabitItem[]> {
+  const col = getUserCol('habits')
+  if (!col) return []
+  const snap = await getDocs(col)
+  return snap.docs.map((d) => d.data() as HabitItem)
+}
+
 /** 从 Firestore 拉取全部目标 */
 export async function fetchGoals(): Promise<Goal[]> {
   const col = getUserCol('goals')
@@ -216,6 +224,22 @@ export async function persistTodos(todos: TodoItem[]): Promise<void> {
   const toDelete = snap.docs.filter((d) => !currentIds.has(d.id))
   await Promise.all([
     ...todos.map((t) => setDoc(doc(col, t.id), stripUndefined(t) as TodoItem)),
+    ...toDelete.map((d) => deleteDoc(d.ref)),
+  ])
+}
+
+/** 将习惯列表同步到 Firestore */
+export async function persistHabits(habits: HabitItem[]): Promise<void> {
+  const col = getUserCol('habits')
+  if (!col) {
+    warnIfCannotPersist('persistHabits')
+    return
+  }
+  const snap = await getDocs(col)
+  const currentIds = new Set(habits.map((h) => h.id))
+  const toDelete = snap.docs.filter((d) => !currentIds.has(d.id))
+  await Promise.all([
+    ...habits.map((h) => setDoc(doc(col, h.id), stripUndefined(h) as HabitItem)),
     ...toDelete.map((d) => deleteDoc(d.ref)),
   ])
 }

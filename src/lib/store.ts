@@ -3,12 +3,14 @@ import {
   initFirebase,
   isFirebaseConfigured,
   fetchTodos as firebaseFetchTodos,
+  fetchHabits as firebaseFetchHabits,
   fetchGoals as firebaseFetchGoals,
   fetchQuickNotes as firebaseFetchQuickNotes,
   fetchFinance as firebaseFetchFinance,
   fetchContacts as firebaseFetchContacts,
   fetchFinanceSettings as firebaseFetchFinanceSettings,
   persistTodos as firebasePersistTodos,
+  persistHabits as firebasePersistHabits,
   persistGoals as firebasePersistGoals,
   persistQuickNotes as firebasePersistQuickNotes,
   persistFinance as firebasePersistFinance,
@@ -16,9 +18,10 @@ import {
   persistFinanceSettings as firebasePersistFinanceSettings,
 } from './firebase'
 import { getCategoryKey } from './finance'
-import type { TodoItem, QuickNoteItem, Goal, FinanceEntry, Contact, FinanceSettings } from '../types'
+import type { TodoItem, HabitItem, QuickNoteItem, Goal, FinanceEntry, Contact, FinanceSettings } from '../types'
 
 const TODOS_KEY = 'todos'
+const HABITS_KEY = 'habits'
 const QUICKNOTES_KEY = 'quicknotes'
 const GOALS_KEY = 'goals'
 const FINANCE_KEY = 'finance'
@@ -35,6 +38,7 @@ const BACKUP_VERSION = 2
 
 /** 内存缓存 */
 let _todos: TodoItem[] = []
+let _habits: HabitItem[] = []
 let _goals: Goal[] = []
 let _quicknotes: QuickNoteItem[] = []
 let _finance: FinanceEntry[] = []
@@ -45,6 +49,7 @@ let _storeReady = false
 export function resetStore(): void {
   _storeReady = false
   _todos = []
+  _habits = []
   _goals = []
   _quicknotes = []
   _finance = []
@@ -60,6 +65,7 @@ export async function initStore(): Promise<void> {
     if (ok) {
       try {
         _todos = await firebaseFetchTodos()
+        _habits = await firebaseFetchHabits()
         _goals = await firebaseFetchGoals()
         _quicknotes = await firebaseFetchQuickNotes()
         _finance = await firebaseFetchFinance()
@@ -67,12 +73,14 @@ export async function initStore(): Promise<void> {
         const remoteFinanceSettings = await firebaseFetchFinanceSettings()
         if (remoteFinanceSettings) setLocal(FINANCE_SETTINGS_KEY, remoteFinanceSettings)
         setLocal(TODOS_KEY, _todos)
+        setLocal(HABITS_KEY, _habits)
         setLocal(GOALS_KEY, _goals)
         setLocal(QUICKNOTES_KEY, _quicknotes)
         setLocal(FINANCE_KEY, _finance)
         setLocal(CONTACTS_KEY, _contacts)
       } catch {
         _todos = getLocal(TODOS_KEY, [])
+        _habits = getLocal(HABITS_KEY, [])
         _goals = getLocal(GOALS_KEY, [])
         _quicknotes = getLocal(QUICKNOTES_KEY, [])
         _finance = getLocal(FINANCE_KEY, [])
@@ -80,6 +88,7 @@ export async function initStore(): Promise<void> {
       }
     } else {
       _todos = getLocal(TODOS_KEY, [])
+      _habits = getLocal(HABITS_KEY, [])
       _goals = getLocal(GOALS_KEY, [])
       _quicknotes = getLocal(QUICKNOTES_KEY, [])
       _finance = getLocal(FINANCE_KEY, [])
@@ -87,6 +96,7 @@ export async function initStore(): Promise<void> {
     }
   } else {
     _todos = getLocal(TODOS_KEY, [])
+    _habits = getLocal(HABITS_KEY, [])
     _goals = getLocal(GOALS_KEY, [])
     _quicknotes = getLocal(QUICKNOTES_KEY, [])
     _finance = getLocal(FINANCE_KEY, [])
@@ -99,6 +109,9 @@ function syncToFirebase(): void {
   if (!isFirebaseConfigured()) return
   firebasePersistTodos(_todos).catch((err) => {
     console.error('[dewdew] Firestore 写入 todos 失败', err)
+  })
+  firebasePersistHabits(_habits).catch((err) => {
+    console.error('[dewdew] Firestore 写入 habits 失败', err)
   })
   firebasePersistGoals(_goals).catch((err) => {
     console.error('[dewdew] Firestore 写入 goals 失败', err)
@@ -119,6 +132,7 @@ export interface BackupData {
   version: number
   exportedAt: string
   todos: TodoItem[]
+  habits: HabitItem[]
   goals: Goal[]
   quicknotes: QuickNoteItem[]
   finance: FinanceEntry[]
@@ -132,6 +146,16 @@ export function getTodos(): TodoItem[] {
 export function setTodos(todos: TodoItem[]): void {
   _todos = todos
   setLocal(TODOS_KEY, todos)
+  syncToFirebase()
+}
+
+export function getHabits(): HabitItem[] {
+  return _habits
+}
+
+export function setHabits(habits: HabitItem[]): void {
+  _habits = habits
+  setLocal(HABITS_KEY, habits)
   syncToFirebase()
 }
 
@@ -193,6 +217,7 @@ export function exportBackup(): BackupData {
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     todos: getTodos(),
+    habits: getHabits(),
     goals: getGoals(),
     quicknotes: getQuickNotes(),
     finance: getFinanceEntries(),
@@ -236,12 +261,14 @@ export function importBackup(data: unknown): { ok: true } | { ok: false; error: 
     const d = data as BackupData
     if (!d || typeof d !== 'object') return { ok: false, error: '无效的备份格式' }
     const todos = Array.isArray(d.todos) ? d.todos : []
+    const habits = Array.isArray((d as any).habits) ? (d as any).habits : []
     const goals = Array.isArray(d.goals) ? d.goals : []
     const quicknotes = Array.isArray(d.quicknotes) ? d.quicknotes : []
     const financeRaw = Array.isArray((d as any).finance) ? (d as any).finance : []
     const finance: FinanceEntry[] = financeRaw.map(normalizeFinanceEntry).filter((e: FinanceEntry | null): e is FinanceEntry => e != null)
     const contacts = Array.isArray((d as any).contacts) ? (d as any).contacts : []
     setTodos(todos)
+    setHabits(habits)
     setGoals(goals)
     setQuickNotes(quicknotes)
     setFinanceEntries(finance)

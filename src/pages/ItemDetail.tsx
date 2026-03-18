@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
-import { getTodos, setTodos, getGoals, getQuickNotes, setQuickNotes } from '../lib/store'
+import { getTodos, setTodos, getHabits, setHabits, getGoals, getQuickNotes, setQuickNotes } from '../lib/store'
 import { getSubtaskProgress, isTodoCompleted } from '../lib/todoCompletion'
 import ReflectionModal from '../components/ReflectionModal'
-import type { TodoItem, QuickNoteItem } from '../types'
+import type { TodoItem, HabitItem, HabitReminder, QuickNoteItem } from '../types'
 import './ItemDetail.css'
 
 export default function ItemDetail() {
   const { t, lang } = useI18n()
-  const { type, id } = useParams<{ type: 'todo' | 'quicknote'; id: string }>()
+  const { type, id } = useParams<{ type: 'todo' | 'quicknote' | 'habit'; id: string }>()
   const navigate = useNavigate()
   const locale = lang === 'zh' ? 'zh-CN' : 'en'
   const [showReflectionModal, setShowReflectionModal] = useState(false)
@@ -153,6 +153,111 @@ export default function ItemDetail() {
             onClose={() => setShowReflectionModal(false)}
           />
         )}
+      </section>
+    )
+  }
+
+  if (type === 'habit') {
+    const habits = getHabits()
+    const goals = getGoals()
+    const item = habits.find((h) => h.id === id) as HabitItem | undefined
+    if (!item) {
+      navigate('/todos')
+      return null
+    }
+    const goal = item.goalId ? goals.find((g) => g.id === item.goalId) : null
+    const ySuffix = t('createGoal.yearSuffix')
+    const mSuffix = t('createGoal.monthSuffix')
+    const goalLabel = goal
+      ? goal.type === 'year' && goal.year
+        ? `${goal.title}（${goal.year}${ySuffix}）`
+        : goal.type === 'month' && goal.year != null && goal.month != null
+          ? `${goal.title}（${goal.year}${ySuffix}${goal.month}${mSuffix}）`
+          : goal.title
+      : t('detail.dash')
+
+    const remove = () => {
+      if (!window.confirm(t('todo.deleteConfirm'))) return
+      setHabits(habits.filter((h) => h.id !== id))
+      navigate('/todos')
+    }
+
+    const dash = t('detail.dash')
+    const weekdayText = (n: number) => t(`todos.weekday.${n}`)
+    const reminders = (item.reminders ?? []) as HabitReminder[]
+
+    return (
+      <section className="page item-detail">
+        <div className="detail-header">
+          <button type="button" className="btn" onClick={() => navigate('/todos')}>{t('detail.back')}</button>
+          <span className="detail-type">{t('detail.type.habit')}</span>
+        </div>
+        <h1 className="detail-title">{item.title}</h1>
+        <dl className="detail-meta">
+          <dt>{t('detail.meta.goal')}</dt>
+          <dd>{goalLabel}</dd>
+          <dt>{t('detail.meta.tags')}</dt>
+          <dd>{item.tags.length ? item.tags.join('、') : dash}</dd>
+          <dt>{t('detail.meta.location')}</dt>
+          <dd>{item.location || dash}</dd>
+          {item.link && (
+            <>
+              <dt>{t('detail.meta.link')}</dt>
+              <dd><a href={item.link} target="_blank" rel="noopener noreferrer" className="detail-link">{item.link}</a></dd>
+            </>
+          )}
+          <dt>{t('detail.meta.people')}</dt>
+          <dd>{item.relatedPeople.length ? item.relatedPeople.join('、') : dash}</dd>
+          <dt>{t('detail.meta.createdAt')}</dt>
+          <dd>{new Date(item.createdAt).toLocaleString(locale)}</dd>
+        </dl>
+
+        {reminders.length > 0 && (
+          <div className="detail-block">
+            <h3>{t('createHabit.field.reminders')}</h3>
+            <ul className="detail-subtasks">
+              {reminders.map((r) => (
+                <li key={r.id} className="detail-subtask">
+                  <span className="detail-subtask-title">
+                    {r.repeat === 'everyday'
+                      ? t('createHabit.repeat.everyday')
+                      : `${t('createHabit.repeat.weekly')} · ${(r.weekdays ?? []).map(weekdayText).join('、') || dash}`}
+                  </span>
+                  <span className="detail-subtask-ddl">{r.time}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {item.description && (
+          <div className="detail-block">
+            <h3>{t('detail.block.desc')}</h3>
+            <p className="detail-description">{item.description}</p>
+          </div>
+        )}
+
+        {item.attachments.length > 0 && (
+          <div className="detail-block">
+            <h3>{t('detail.block.attachments')}</h3>
+            <div className="detail-attachments">
+              {item.attachments.map((a) =>
+                a.type.startsWith('image/') ? (
+                  <img key={a.id} src={a.dataUrl} alt={a.name} className="detail-attach-img" />
+                ) : (
+                  <a key={a.id} href={a.dataUrl} download={a.name} className="detail-attach-file">📎 {a.name}</a>
+                )
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="detail-actions">
+          <button type="button" className="btn" onClick={() => navigate(`/edit/habit/${id}`)}>
+            {t('detail.edit')}
+          </button>
+          <button type="button" className="btn danger" onClick={remove}>{t('detail.delete')}</button>
+        </div>
       </section>
     )
   }
