@@ -36,6 +36,17 @@ function sentKey(todoId: string, minutes: number, ddl: string): string {
   return `${todoId}:${minutes}:${ddl}`
 }
 
+/** 绝对地址图标（iOS 对相对路径 icon 支持差） */
+function notificationIconUrl(): string | undefined {
+  if (typeof window === 'undefined') return undefined
+  try {
+    const base = import.meta.env.BASE_URL || '/'
+    return new URL('logo.png', `${window.location.origin}${base.endsWith('/') ? base : `${base}/`}`).href
+  } catch {
+    return undefined
+  }
+}
+
 export function isNotificationSupported(): boolean {
   return typeof window !== 'undefined' && 'Notification' in window
 }
@@ -51,12 +62,10 @@ export function requestNotificationPermission(): Promise<NotificationPermission>
   return Notification.requestPermission()
 }
 
-/** 提醒窗口内仅在前 N 毫秒内发送，避免过早推送（约 2 分钟） */
-const REMINDER_SEND_WINDOW_MS = 2 * 60 * 1000
-
 /**
- * 检查待办 DDL：在「提前 N 分钟」的时间点附近（2 分钟内）且未发过时发送系统通知。
- * 仅当总开关开启且通知权限为 granted 时执行。
+ * 待办提醒：在「提前 N 分钟」的时间点之后、截止之前，任意时刻可补发一次。
+ * 旧逻辑仅在提醒点后约 2 分钟内发送——在 iOS PWA / 后台挂起时定时器不跑，会整段错过；
+ * 改为打开应用或回到前台时仍能收到未到期的提醒（每条提前量仍只提醒一次）。
  */
 export function checkAndNotify(lang: 'zh' | 'en'): void {
   if (!isNotificationSupported() || Notification.permission !== 'granted') return
@@ -67,11 +76,13 @@ export function checkAndNotify(lang: 'zh' | 'en'): void {
   const sent = getSentMap()
   let changed = false
   const locale = lang === 'zh' ? 'zh-CN' : 'en-US'
+  const iconUrl = notificationIconUrl()
 
   for (const todo of todos) {
     const ddl = todo.ddl?.trim()
     if (!ddl) continue
     const ddlTime = new Date(ddl).getTime()
+    if (!Number.isFinite(ddlTime)) continue
     const minutesList = todo.reminderBeforeMinutes ?? []
     if (minutesList.length === 0) continue
 
@@ -79,7 +90,7 @@ export function checkAndNotify(lang: 'zh' | 'en'): void {
       if (minutes <= 0) continue
       const windowMs = minutes * 60 * 1000
       const windowStart = ddlTime - windowMs
-      if (ddlTime < now) {
+      if (ddlTime <= now) {
         const key = sentKey(todo.id, minutes, ddl)
         if (sent[key]) {
           delete sent[key]
@@ -88,25 +99,27 @@ export function checkAndNotify(lang: 'zh' | 'en'): void {
         continue
       }
       if (now < windowStart) continue
-      const inSendWindow = now <= windowStart + REMINDER_SEND_WINDOW_MS
-      if (!inSendWindow) continue
       const key = sentKey(todo.id, minutes, ddl)
       if (sent[key]) continue
 
-      const title = lang === 'zh' ? '待办即将到期' : 'Todo due soon'
+      const title = lang === 'zh' ? '计划提醒' : 'Plan reminder'
       const ddlFormatted = new Date(ddl).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
       const titlePart = todo.title?.trim() || (lang === 'zh' ? '无标题' : 'No title')
       const body = lang === 'zh' ? `${titlePart} · 截止 ${ddlFormatted}` : `${titlePart} · Due ${ddlFormatted}`
       try {
-        new Notification(title, {
-          body,
-          icon: `${import.meta.env.BASE_URL}logo.png`,
-          tag: `todo-${todo.id}-${minutes}-${ddl}`,
-        })
+        const opts: NotificationOptions = { body, tag: `todo-${todo.id}-${minutes}-${ddl}` }
+        if (iconUrl) opts.icon = iconUrl
+        new Notification(title, opts)
         sent[key] = true
         changed = true
       } catch {
-        // ignore
+        try {
+          new Notification(title, { body, tag: `todo-${todo.id}-${minutes}-${ddl}` })
+          sent[key] = true
+          changed = true
+        } catch {
+          // ignore
+        }
       }
     }
   }
@@ -120,6 +133,7 @@ function checkBirthdayReminders(lang: 'zh' | 'en'): void {
   if (!isNotificationSupported() || Notification.permission !== 'granted') return
   if (!getReminderEnabled()) return
 
+  const iconUrl = notificationIconUrl()
   const contacts = getContacts()
   const today = new Date()
   const todayKey = today.toISOString().slice(0, 10)
@@ -146,15 +160,19 @@ function checkBirthdayReminders(lang: 'zh' | 'en'): void {
       const title = lang === 'zh' ? '生日提醒' : 'Birthday reminder'
       const body = lang === 'zh' ? `${c.name} 的生日${offset === 0 ? '今天' : '明天'}到了` : `${c.name}'s birthday is ${offset === 0 ? 'today' : 'tomorrow'}`
       try {
-        new Notification(title, {
-          body,
-          icon: `${import.meta.env.BASE_URL}logo.png`,
-          tag: `birthday-${c.id}-${year}-${offset}`,
-        })
+        const opts: NotificationOptions = { body, tag: `birthday-${c.id}-${year}-${offset}` }
+        if (iconUrl) opts.icon = iconUrl
+        new Notification(title, opts)
         sent[key] = true
         changed = true
       } catch {
-        // ignore
+        try {
+          new Notification(title, { body, tag: `birthday-${c.id}-${year}-${offset}` })
+          sent[key] = true
+          changed = true
+        } catch {
+          // ignore
+        }
       }
     }
   }

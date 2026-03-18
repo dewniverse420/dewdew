@@ -6,11 +6,12 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
   isNotificationSupported,
+  checkAndNotify,
 } from '../lib/reminder'
 import './ReminderSettings.css'
 
 export default function ReminderSettings() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const [open, setOpen] = useState(false)
   const [enabled, setEnabled] = useState(getReminderEnabled)
   const [permission, setPermission] = useState<NotificationPermission>(getNotificationPermission())
@@ -28,6 +29,7 @@ export default function ReminderSettings() {
   const handleMasterOn = () => {
     setReminderEnabled(true)
     setEnabled(true)
+    if (getNotificationPermission() === 'granted') checkAndNotify(lang)
   }
 
   const handleMasterOff = () => {
@@ -38,6 +40,7 @@ export default function ReminderSettings() {
   const handleRequestPermission = async () => {
     const p = await requestNotificationPermission()
     setPermission(p)
+    if (p === 'granted' && getReminderEnabled()) checkAndNotify(lang)
   }
 
   return (
@@ -69,6 +72,7 @@ export default function ReminderSettings() {
           <div className="reminder-settings-body">
             <h3 className="reminder-settings-title">{t('reminder.title')}</h3>
             <p className="reminder-settings-hint">{t('reminder.hint')}</p>
+            <p className="reminder-settings-ios">{t('reminder.iosHint')}</p>
             {!isNotificationSupported() ? (
               <p className="reminder-settings-unsupported">{t('reminder.unsupported')}</p>
             ) : (

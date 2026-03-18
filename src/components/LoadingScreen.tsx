@@ -1,5 +1,5 @@
 import { useI18n } from '../lib/i18n'
-import { APP_VERSION, BUILD_DATE, DEVELOPER_NAME } from '../appMeta'
+import { APP_VERSION, DEVELOPER_NAME } from '../appMeta'
 import './LoadingScreen.css'
 
 const LOADING_IMG_SRC = `${import.meta.env.BASE_URL}loading.gif`
@@ -28,7 +28,7 @@ export default function LoadingScreen({ message }: LoadingScreenProps) {
       </div>
       <footer className="loading-screen-footer">
         <span className="loading-screen-version">{t('loading.version')} v{APP_VERSION}</span>
-        {BUILD_DATE && <span className="loading-screen-date">{BUILD_DATE}</span>}
+        <span className="loading-screen-date">{t('loading.buildDate')}</span>
         <span className="loading-screen-developer">{t('loading.developer')}: {DEVELOPER_NAME}</span>
       </footer>
     </div>

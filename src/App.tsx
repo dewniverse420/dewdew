@@ -68,9 +68,21 @@ function App() {
 
   useEffect(() => {
     if (getNotificationPermission() !== 'granted' || !getReminderEnabled()) return
-    checkAndNotify(lang)
-    const id = setInterval(() => checkAndNotify(lang), 60 * 1000)
-    return () => clearInterval(id)
+    const run = () => checkAndNotify(lang)
+    run()
+    const id = setInterval(run, 60 * 1000)
+    const onForeground = () => {
+      if (document.visibilityState === 'visible') run()
+    }
+    document.addEventListener('visibilitychange', onForeground)
+    window.addEventListener('focus', run)
+    window.addEventListener('pageshow', run)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onForeground)
+      window.removeEventListener('focus', run)
+      window.removeEventListener('pageshow', run)
+    }
   }, [lang])
 
   const openUpload = () => {
