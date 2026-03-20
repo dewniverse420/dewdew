@@ -4,6 +4,7 @@ import { useI18n } from '../lib/i18n'
 import { getTodos, setTodos, getHabits, setHabits, getAllTags, getGoals, getContacts } from '../lib/store'
 import { getSubtaskProgress, isTodoCompleted } from '../lib/todoCompletion'
 import { getDailyCompletionMap, setDailyCompletion } from '../lib/dailyCompletion'
+import { buildTodayPlanShareText, shareOrCopyTodayPlan } from '../lib/shareTodayPlan'
 import ReflectionModal from '../components/ReflectionModal'
 import type { TodoItem, HabitItem, Goal, Contact, HabitReminder } from '../types'
 import './TodosView.css'
@@ -532,9 +533,31 @@ export default function TodosView() {
 
   const reflectionTodo = reflectionTodoId ? todos.find((item) => item.id === reflectionTodoId) : null
 
+  const handleShareToday = async () => {
+    if (todayTodos.length === 0 && todayHabitOcc.length === 0) {
+      alert(t('share.today.empty'))
+      return
+    }
+    const text = buildTodayPlanShareText({
+      dayKeyLocal: todayKeyLocalStr,
+      todos: visibleTodos,
+      habits,
+      lang,
+      locale,
+    })
+    const result = await shareOrCopyTodayPlan(text, t('share.today.title'))
+    if (result === 'copied') alert(t('share.today.copied'))
+    if (result === 'empty') alert(t('share.today.failed'))
+  }
+
   return (
     <section className="page todos-page">
-      <h2 className="page-heading">{t('todos.heading')}</h2>
+      <div className="todos-page-heading-row">
+        <h2 className="page-heading">{t('todos.heading')}</h2>
+        <button type="button" className="btn btn-outline todos-share-today" onClick={handleShareToday}>
+          {t('todos.shareToday')}
+        </button>
+      </div>
       <label className="todos-hide-completed">
         <input
           type="checkbox"

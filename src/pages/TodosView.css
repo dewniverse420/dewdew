@@ -1,5 +1,21 @@
-.todos-page .page-heading {
+.todos-page-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   margin-bottom: 16px;
+}
+
+.todos-page-heading-row .page-heading {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.todos-share-today {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .todos-hide-completed {

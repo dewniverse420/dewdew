@@ -133,6 +133,13 @@
   border: 1px solid var(--color-border);
 }
 
+.reminder-settings-closed-app {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin: 8px 0 0;
+  line-height: 1.45;
+}
+
 .reminder-settings-unsupported {
   font-size: 0.8125rem;
   color: var(--color-text-muted);

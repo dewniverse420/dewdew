@@ -73,6 +73,7 @@ export default function ReminderSettings() {
             <h3 className="reminder-settings-title">{t('reminder.title')}</h3>
             <p className="reminder-settings-hint">{t('reminder.hint')}</p>
             <p className="reminder-settings-ios">{t('reminder.iosHint')}</p>
+            <p className="reminder-settings-closed-app">{t('reminder.closedAppHint')}</p>
             {!isNotificationSupported() ? (
               <p className="reminder-settings-unsupported">{t('reminder.unsupported')}</p>
             ) : (
