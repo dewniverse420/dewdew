@@ -18,6 +18,7 @@ import {
   persistFinanceSettings as firebasePersistFinanceSettings,
 } from './firebase'
 import { getCategoryKey } from './finance'
+import { applyOverdueTodoRollover } from './todoRollover'
 import type { TodoItem, HabitItem, QuickNoteItem, Goal, FinanceEntry, Contact, FinanceSettings } from '../types'
 
 const TODOS_KEY = 'todos'
@@ -102,7 +103,18 @@ export async function initStore(): Promise<void> {
     _finance = getLocal(FINANCE_KEY, [])
     _contacts = getLocal(CONTACTS_KEY, [])
   }
+  const rolled = applyOverdueTodoRollover(_todos)
+  if (rolled.changed) {
+    setTodos(rolled.next)
+  }
   _storeReady = true
+}
+
+/** 应用未完成待办的逾期顺延（跨日打开或回到前台时调用） */
+export function applyTodoRolloverIfNeeded(): void {
+  if (!_storeReady) return
+  const rolled = applyOverdueTodoRollover(_todos)
+  if (rolled.changed) setTodos(rolled.next)
 }
 
 function syncToFirebase(): void {

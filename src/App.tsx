@@ -23,6 +23,7 @@ import AnalysisPanel from './components/AnalysisPanel'
 import AuthStatus from './components/AuthStatus'
 import ReminderSettings from './components/ReminderSettings'
 import { checkAndNotify, getReminderEnabled, getNotificationPermission } from './lib/reminder'
+import { applyTodoRolloverIfNeeded } from './lib/store'
 import './App.css'
 import './components/ThemeSettings.css'
 import './components/DataSettings.css'
@@ -84,6 +85,22 @@ function App() {
       window.removeEventListener('pageshow', run)
     }
   }, [lang])
+
+  useEffect(() => {
+    const run = () => applyTodoRolloverIfNeeded()
+    run()
+    const onForeground = () => {
+      if (document.visibilityState === 'visible') run()
+    }
+    document.addEventListener('visibilitychange', onForeground)
+    window.addEventListener('focus', run)
+    window.addEventListener('pageshow', run)
+    return () => {
+      document.removeEventListener('visibilitychange', onForeground)
+      window.removeEventListener('focus', run)
+      window.removeEventListener('pageshow', run)
+    }
+  }, [])
 
   const openUpload = () => {
     setShowCameraMenu(false)

@@ -75,6 +75,20 @@ function toDateKeyLocal(iso: string): string {
   return `${y}-${m}-${day}`
 }
 
+function getTodoDueKeyLocal(t: TodoItem): string {
+  return toDateKeyLocal(getTodoTime(t))
+}
+
+/**
+ * 待办延续规则（仅针对待办，不是习惯）：
+ * - 已完成：只在其原始日期当天显示
+ * - 未完成：从原始日期开始，之后每天都继续显示
+ */
+function todoShouldAppearOnDay(t: TodoItem, dayKeyLocal: string): boolean {
+  const dueKeyLocal = getTodoDueKeyLocal(t)
+  return isTodoCompleted(t) ? dueKeyLocal === dayKeyLocal : dueKeyLocal <= dayKeyLocal
+}
+
 /** 周一为 0，周日为 6 */
 function getDayOfWeek(iso: string): number {
   const d = new Date(iso)
@@ -179,17 +193,20 @@ function goalDisplayLabel(g: Goal, t: (k: string) => string, lang: string): stri
   return g.title
 }
 
-function computeDayCompletion(dayKeyLocal: string, todos: TodoItem[], habits: HabitItem[]): { done: number; total: number; percent: number } {
-  const dayTodos = todos.filter((t) => toDateKeyLocal(getTodoTime(t)) === dayKeyLocal)
+function computeTodoCompletion(dayKeyLocal: string, todos: TodoItem[]): { done: number; total: number; percent: number } {
+  const dayTodos = todos.filter((t) => todoShouldAppearOnDay(t, dayKeyLocal))
   const todoTotal = dayTodos.length
   const todoDone = dayTodos.filter((t) => isTodoCompleted(t)).length
+  const percent = todoTotal ? Math.round((todoDone / todoTotal) * 100) : 0
+  return { done: todoDone, total: todoTotal, percent }
+}
+
+function computeHabitCompletion(dayKeyLocal: string, habits: HabitItem[]): { done: number; total: number; percent: number } {
   const habitOcc = getHabitOccurrencesForDay(habits, dayKeyLocal)
   const habitTotal = habitOcc.length
   const habitDone = habitOcc.filter((occ) => Boolean(occ.habit.checks?.[habitOccKey(occ.dayKeyLocal, occ.reminder)])).length
-  const total = todoTotal + habitTotal
-  const done = todoDone + habitDone
-  const percent = total ? Math.round((done / total) * 100) : 0
-  return { done, total, percent }
+  const percent = habitTotal ? Math.round((habitDone / habitTotal) * 100) : 0
+  return { done: habitDone, total: habitTotal, percent }
 }
 
 function HabitOccurrenceRow({
@@ -236,11 +253,13 @@ function TodoItemRow({
   todo,
   onToggleComplete,
   onToggleSubtask,
+  isCarry,
   children,
 }: {
   todo: TodoItem
   onToggleComplete: (todo: TodoItem, completed: boolean) => void
   onToggleSubtask?: (todo: TodoItem, subtaskId: string, completed: boolean) => void
+  isCarry?: boolean
   children: React.ReactNode
 }) {
   const { t, lang } = useI18n()
@@ -252,7 +271,7 @@ function TodoItemRow({
   return (
     <div className="todos-item-block">
       <div
-        className={`todos-item-wrap ${completed ? 'todos-item--completed' : ''}`}
+        className={`todos-item-wrap ${completed ? 'todos-item--completed' : ''} ${isCarry && !completed ? 'todos-item-wrap--carry' : ''}`}
         style={{ ['--card-urgency' as string]: String(urgency) }}
       >
         {children}
@@ -420,7 +439,7 @@ export default function TodosView() {
   const todayTodos = useMemo(
     () =>
       [...visibleTodos]
-        .filter((t) => toDateKeyLocal(getTodoTime(t)) === todayKeyLocalStr)
+        .filter((t) => todoShouldAppearOnDay(t, todayKeyLocalStr))
         .sort((a, b) => new Date(getTodoTime(a)).getTime() - new Date(getTodoTime(b)).getTime()),
     [visibleTodos, todayKeyLocalStr]
   )
@@ -446,7 +465,8 @@ export default function TodosView() {
   }, [dayKeys, habits.length])
 
   const calendarTodos = useMemo(() => {
-    return sortedByTime.filter((t) => toDateKey(getTodoTime(t)) === calendarDate)
+    const dayKeyLocal = toDateKeyLocalFromDate(new Date(calendarDate + 'T12:00:00'))
+    return sortedByTime.filter((t) => todoShouldAppearOnDay(t, dayKeyLocal))
   }, [sortedByTime, calendarDate])
   const calendarHabits = useMemo(() => {
     const localKey = toDateKeyLocalFromDate(new Date(calendarDate + 'T12:00:00'))
@@ -467,10 +487,11 @@ export default function TodosView() {
       ...dayKeys.map((d) => {
         const localKey = toDateKeyLocalFromDate(new Date(d + 'T12:00:00'))
         const habitCount = getHabitOccurrencesForDay(habits, localKey).length
-        return (byDay.get(d)?.length ?? 0) + habitCount + getBirthdaysOnDay(d, contacts).length
+        const todoCount = visibleTodos.filter((t) => todoShouldAppearOnDay(t, localKey)).length
+        return todoCount + habitCount + getBirthdaysOnDay(d, contacts).length
       })
     )
-  }, [monthDays, byDay, contacts, habits])
+  }, [monthDays, contacts, habits, visibleTodos])
   const weekStart = useMemo(() => getWeekStart(calendarDate), [calendarDate])
   const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart])
 
@@ -613,7 +634,12 @@ export default function TodosView() {
             <ul className="todos-list">
               {todayTodos.map((item) => (
                 <li key={item.id}>
-                    <TodoItemRow todo={item} onToggleComplete={handleToggleComplete} onToggleSubtask={handleToggleSubtask}>
+                    <TodoItemRow
+                      todo={item}
+                      onToggleComplete={handleToggleComplete}
+                      onToggleSubtask={handleToggleSubtask}
+                      isCarry={!isTodoCompleted(item) && getTodoDueKeyLocal(item) < todayKeyLocalStr}
+                    >
                       <Link to={`/item/todo/${item.id}`} className="todos-item">
                         <span className="todos-item-title">{item.title}</span>
                         <span className="todos-item-meta">
@@ -955,18 +981,37 @@ export default function TodosView() {
                       dayKey === null ? (
                         <div key={`e-${i}`} className="todos-calendar-day-cell empty" />
                       ) : (() => {
-                        const todoCount = byDay.get(dayKey)?.length ?? 0
                         const localKey = toDateKeyLocalFromDate(new Date(dayKey + 'T12:00:00'))
+                        const dayTodos = visibleTodos.filter((t) => todoShouldAppearOnDay(t, localKey))
+                        const todoCount = dayTodos.length
                         const habitCount = getHabitOccurrencesForDay(habits, localKey).length
                         const birthdayCount = getBirthdaysOnDay(dayKey, contacts).length
                         const dayCount = todoCount + habitCount + birthdayCount
                         const dayIntensity = dayCount / maxMonthTodos
                         const recordable = compareDayKey(localKey, todayKeyLocalStr) <= 0
                         const stored = completionMap[localKey]
-                        const computed = recordable ? computeDayCompletion(localKey, visibleTodos, habits) : null
-                        const percent = stored?.percent ?? computed?.percent ?? 0
-                        if (recordable && computed && (!stored || stored.total !== computed.total || stored.done !== computed.done)) {
-                          setDailyCompletion(localKey, { ...computed, updatedAt: new Date().toISOString() })
+                        const storedAny = stored as unknown as { todo?: { done: number; total: number; percent: number }; habit?: { done: number; total: number; percent: number }; percent?: number } | undefined
+                        const storedTodo = storedAny?.todo
+                        const storedHabit = storedAny?.habit
+
+                        const computedTodo = recordable ? computeTodoCompletion(localKey, visibleTodos) : null
+                        const computedHabit = recordable ? computeHabitCompletion(localKey, habits) : null
+
+                        const todoPercent = storedTodo?.percent ?? computedTodo?.percent ?? storedAny?.percent ?? 0
+                        const habitPercent = storedHabit?.percent ?? computedHabit?.percent ?? 0
+
+                        if (
+                          recordable &&
+                          computedTodo &&
+                          computedHabit &&
+                          (!storedTodo ||
+                            storedTodo.total !== computedTodo.total ||
+                            storedTodo.done !== computedTodo.done ||
+                            !storedHabit ||
+                            storedHabit.total !== computedHabit.total ||
+                            storedHabit.done !== computedHabit.done)
+                        ) {
+                          setDailyCompletion(localKey, { todo: computedTodo, habit: computedHabit, updatedAt: new Date().toISOString() })
                         }
                         return (
                           <button
@@ -978,9 +1023,20 @@ export default function TodosView() {
                             title={dayCount > 0 ? (todoCount ? t('todos.calendar.todoCount', { n: String(todoCount) }) : '') + (habitCount ? ((todoCount ? ' · ' : '') + t('detail.type.habit') + ` ${habitCount}`) : '') + (birthdayCount ? ((todoCount || habitCount ? ' · ' : '') + t('todos.calendar.birthdayCount', { n: String(birthdayCount) })) : '') : undefined}
                           >
                             <span className="todos-calendar-day-cell-bg" aria-hidden />
-                            {recordable && (stored || computed) && (
-                              <span className="todos-calendar-day-percent" aria-label={`完成度 ${percent}%`}>
-                                {percent}%
+                            {recordable && (stored || (computedTodo && computedHabit)) && (
+                              <span
+                                className="todos-calendar-day-percent"
+                                aria-label={t('todos.calendar.dayPercentAria', {
+                                  todoPercent: String(todoPercent),
+                                  habitPercent: String(habitPercent),
+                                })}
+                              >
+                                <span className="todos-calendar-day-percent-row">
+                                  {t('todos.calendar.dayPercentTodo', { percent: String(todoPercent) })}
+                                </span>
+                                <span className="todos-calendar-day-percent-row">
+                                  {t('todos.calendar.dayPercentHabit', { percent: String(habitPercent) })}
+                                </span>
                               </span>
                             )}
                             <span className="todos-calendar-day-num">{new Date(dayKey).getDate()}</span>
@@ -1039,15 +1095,26 @@ export default function TodosView() {
                               </Link>
                             </li>
                           ))}
-                          {(byDay.get(dayKey) ?? []).map((t) => (
-                            <li key={t.id}>
-                              <Link to={`/item/todo/${t.id}`} className="todos-calendar-week-event">
-                                <span className="todos-calendar-week-event-importance">{'!'.repeat(t.importance)}</span>
-                                <span className="todos-calendar-week-event-time">{formatTime(getTodoTime(t), locale)}</span>
-                                <span className="todos-calendar-week-event-title">{t.title}</span>
-                              </Link>
-                            </li>
-                          ))}
+                          {(() => {
+                            const dayKeyLocal = toDateKeyLocalFromDate(new Date(dayKey + 'T12:00:00'))
+                            return sortedByTime
+                              .filter((t) => todoShouldAppearOnDay(t, dayKeyLocal))
+                              .map((t) => {
+                                const isCarry = !isTodoCompleted(t) && getTodoDueKeyLocal(t) < dayKeyLocal
+                                return (
+                                  <li key={`${dayKey}-${t.id}`}>
+                                    <Link
+                                      to={`/item/todo/${t.id}`}
+                                      className={`todos-calendar-week-event ${isCarry ? 'todos-calendar-week-event--carry' : ''}`}
+                                    >
+                                      <span className="todos-calendar-week-event-importance">{'!'.repeat(t.importance)}</span>
+                                      <span className="todos-calendar-week-event-time">{formatTime(getTodoTime(t), locale)}</span>
+                                      <span className="todos-calendar-week-event-title">{t.title}</span>
+                                    </Link>
+                                  </li>
+                                )
+                              })
+                          })()}
                           {getHabitOccurrencesForDay(habits, toDateKeyLocalFromDate(new Date(dayKey + 'T12:00:00'))).map((occ) => (
                             <li key={`h-${occ.habit.id}-${occ.reminder.id}-${occ.timeIso}`}>
                               <Link to={`/item/habit/${occ.habit.id}`} className="todos-calendar-week-event todos-calendar-week-event--habit">
@@ -1084,6 +1151,7 @@ export default function TodosView() {
                   </div>
                   {(() => {
                     const dayBirthdays = getBirthdaysOnDay(calendarDate, contacts)
+                    const dayKeyLocal = toDateKeyLocalFromDate(new Date(calendarDate + 'T12:00:00'))
                     return (
                       <>
                         {dayBirthdays.length > 0 && (
@@ -1114,7 +1182,7 @@ export default function TodosView() {
                               <Link
                                 key={t.id}
                                 to={`/item/todo/${t.id}`}
-                                className="todos-calendar-event"
+                                className={`todos-calendar-event ${!isTodoCompleted(t) && getTodoDueKeyLocal(t) < dayKeyLocal ? 'todos-calendar-event--carry' : ''}`}
                                 style={{
                                   top: getEventTop(getTodoTime(t)),
                                   height: SLOT_HEIGHT - 4,

@@ -3,9 +3,16 @@ import { getLocal, setLocal } from './storage'
 const DAILY_COMPLETION_KEY = 'daily-completion'
 
 export type DailyCompletionRecord = {
-  done: number
-  total: number
-  percent: number
+  todo: {
+    done: number
+    total: number
+    percent: number
+  }
+  habit: {
+    done: number
+    total: number
+    percent: number
+  }
   updatedAt: string
 }
 
