@@ -224,6 +224,13 @@
 
 .todos-today-progress {
   margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.todos-today-progress-block {
+  min-width: 0;
 }
 
 .todos-today-progress-bar {
@@ -234,11 +241,19 @@
   margin-bottom: 8px;
 }
 
+.todos-today-progress-bar--habit {
+  background: color-mix(in srgb, var(--color-border) 88%, #10b981 12%);
+}
+
 .todos-today-progress-fill {
   height: 100%;
   border-radius: 999px;
   background: var(--color-primary);
   transition: width 0.25s ease;
+}
+
+.todos-today-progress-fill--habit {
+  background: linear-gradient(90deg, #059669, #10b981);
 }
 
 .todos-today-progress-text {
@@ -903,13 +918,6 @@
   padding: 2px 6px;
   border-radius: 999px;
   line-height: 1.2;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.todos-calendar-day-percent-row {
-  display: block;
   white-space: nowrap;
 }
 

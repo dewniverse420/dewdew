@@ -444,9 +444,14 @@ export default function TodosView() {
     [visibleTodos, todayKeyLocalStr]
   )
   const todayHabitOcc = useMemo(() => getHabitOccurrencesForDay(habits, todayKeyLocalStr), [habits, todayKeyLocalStr])
-  const todayCompleted = useMemo(() => todayTodos.filter((t) => isTodoCompleted(t)).length, [todayTodos])
-  const todayTotal = todayTodos.length
-  const todayPercent = todayTotal ? Math.round((todayCompleted / todayTotal) * 100) : 0
+  const todayTodoCompletion = useMemo(
+    () => computeTodoCompletion(todayKeyLocalStr, visibleTodos),
+    [visibleTodos, todayKeyLocalStr]
+  )
+  const todayHabitCompletion = useMemo(
+    () => computeHabitCompletion(todayKeyLocalStr, habits),
+    [habits, todayKeyLocalStr]
+  )
 
   const byDay = useMemo(() => {
     const map = new Map<string, TodoItem[]>()
@@ -621,12 +626,42 @@ export default function TodosView() {
       {displayMode === 'today' && (
         <div className="todos-today-wrap">
           <div className="todos-today-progress">
-            <div className="todos-today-progress-bar" role="progressbar" aria-valuenow={todayPercent} aria-valuemin={0} aria-valuemax={100}>
-              <div className="todos-today-progress-fill" style={{ width: `${todayPercent}%` }} />
+            <div className="todos-today-progress-block todos-today-progress-block--todo">
+              <div
+                className="todos-today-progress-bar"
+                role="progressbar"
+                aria-valuenow={todayTodoCompletion.percent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div className="todos-today-progress-fill" style={{ width: `${todayTodoCompletion.percent}%` }} />
+              </div>
+              <p className="todos-today-progress-text">
+                {t('todos.today.todoProgress', {
+                  done: String(todayTodoCompletion.done),
+                  total: String(todayTodoCompletion.total),
+                  percent: String(todayTodoCompletion.percent),
+                })}
+              </p>
             </div>
-            <p className="todos-today-progress-text">
-              {t('todos.today.progress', { done: String(todayCompleted), total: String(todayTotal), percent: String(todayPercent) })}
-            </p>
+            <div className="todos-today-progress-block todos-today-progress-block--habit">
+              <div
+                className="todos-today-progress-bar todos-today-progress-bar--habit"
+                role="progressbar"
+                aria-valuenow={todayHabitCompletion.percent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div className="todos-today-progress-fill todos-today-progress-fill--habit" style={{ width: `${todayHabitCompletion.percent}%` }} />
+              </div>
+              <p className="todos-today-progress-text">
+                {t('todos.today.habitProgress', {
+                  done: String(todayHabitCompletion.done),
+                  total: String(todayHabitCompletion.total),
+                  percent: String(todayHabitCompletion.percent),
+                })}
+              </p>
+            </div>
           </div>
           {todayTodos.length === 0 && todayHabitOcc.length === 0 ? (
             <p className="empty-hint">{t('todos.today.empty')}</p>
@@ -998,7 +1033,6 @@ export default function TodosView() {
                         const computedHabit = recordable ? computeHabitCompletion(localKey, habits) : null
 
                         const todoPercent = storedTodo?.percent ?? computedTodo?.percent ?? storedAny?.percent ?? 0
-                        const habitPercent = storedHabit?.percent ?? computedHabit?.percent ?? 0
 
                         if (
                           recordable &&
@@ -1023,20 +1057,12 @@ export default function TodosView() {
                             title={dayCount > 0 ? (todoCount ? t('todos.calendar.todoCount', { n: String(todoCount) }) : '') + (habitCount ? ((todoCount ? ' · ' : '') + t('detail.type.habit') + ` ${habitCount}`) : '') + (birthdayCount ? ((todoCount || habitCount ? ' · ' : '') + t('todos.calendar.birthdayCount', { n: String(birthdayCount) })) : '') : undefined}
                           >
                             <span className="todos-calendar-day-cell-bg" aria-hidden />
-                            {recordable && (stored || (computedTodo && computedHabit)) && (
+                            {recordable && (stored || computedTodo) && (
                               <span
                                 className="todos-calendar-day-percent"
-                                aria-label={t('todos.calendar.dayPercentAria', {
-                                  todoPercent: String(todoPercent),
-                                  habitPercent: String(habitPercent),
-                                })}
+                                aria-label={t('todos.calendar.dayPercentTodoAria', { percent: String(todoPercent) })}
                               >
-                                <span className="todos-calendar-day-percent-row">
-                                  {t('todos.calendar.dayPercentTodo', { percent: String(todoPercent) })}
-                                </span>
-                                <span className="todos-calendar-day-percent-row">
-                                  {t('todos.calendar.dayPercentHabit', { percent: String(habitPercent) })}
-                                </span>
+                                {t('todos.calendar.dayPercentTodo', { percent: String(todoPercent) })}
                               </span>
                             )}
                             <span className="todos-calendar-day-num">{new Date(dayKey).getDate()}</span>

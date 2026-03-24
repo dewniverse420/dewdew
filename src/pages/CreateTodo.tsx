@@ -1,9 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
 import { getTodos, setTodos, getGoals } from '../lib/store'
 import { REMINDER_PRESETS } from '../lib/reminder'
-import { isoToLocalDatetimeLocal } from '../lib/datetime'
+import {
+  localDateStrFromDate,
+  localEndOfDayIsoFromDateStr,
+  localDateAndOptionalTimeToIso,
+  parseIsoToDdlParts,
+} from '../lib/datetime'
 import type { TodoItem, Attachment } from '../types'
 import type { Goal } from '../types'
 import TagInput from '../components/TagInput'
@@ -22,10 +27,13 @@ function goalLabel(g: Goal, t: (k: string) => string): string {
   return `${typeLabel} · ${g.title}`
 }
 
+export type TodoPrefilled = { title?: string; description?: string }
+export type TodoCreateState = { prefilled?: TodoPrefilled; attachment?: Attachment }
+
 const emptyTodo = (): Omit<TodoItem, 'id' | 'createdAt'> => ({
   type: 'todo',
   title: '',
-  ddl: '',
+  ddl: localEndOfDayIsoFromDateStr(localDateStrFromDate(new Date())),
   importance: 3,
   tags: [],
   goalId: undefined,
@@ -40,25 +48,24 @@ const emptyTodo = (): Omit<TodoItem, 'id' | 'createdAt'> => ({
   reminderBeforeMinutes: [],
 })
 
-export type TodoPrefilled = { title?: string; description?: string }
-export type TodoCreateState = { prefilled?: TodoPrefilled; attachment?: Attachment }
-
-export default function CreateTodo() {
-  const { t } = useI18n()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { id: editId } = useParams<{ id: string }>()
-  const goals = getGoals()
-  const [form, setForm] = useState(() => {
-    const state = location.state as TodoCreateState | undefined
-    const prefilled = state?.prefilled
-    const attachment = state?.attachment
-    const base = emptyTodo()
-    const attachments = attachment ? [attachment, ...base.attachments] : base.attachments
-    if (editId) {
-      const existing = getTodos().find((todo) => todo.id === editId) as TodoItem | undefined
-      if (existing) {
-        return {
+function buildInitialCreateTodo(
+  editId: string | undefined,
+  locationState: TodoCreateState | undefined
+): {
+  form: Omit<TodoItem, 'id' | 'createdAt'>
+  ddlDate: string
+  useSpecificTime: boolean
+  timeStr: string
+} {
+  const base = emptyTodo()
+  const attachment = locationState?.attachment
+  const attachments = attachment ? [attachment, ...base.attachments] : base.attachments
+  if (editId) {
+    const existing = getTodos().find((todo) => todo.id === editId) as TodoItem | undefined
+    if (existing) {
+      const parts = parseIsoToDdlParts(existing.ddl)
+      return {
+        form: {
           ...base,
           title: existing.title,
           ddl: existing.ddl,
@@ -72,19 +79,54 @@ export default function CreateTodo() {
           attachments: existing.attachments,
           subtasks: existing.subtasks ?? [],
           reminderBeforeMinutes: existing.reminderBeforeMinutes ?? [],
-        }
+        },
+        ddlDate: parts.ddlDate,
+        useSpecificTime: parts.useSpecificTime,
+        timeStr: parts.timeStr,
       }
     }
-    if (prefilled)
-      return {
+  }
+  const prefilled = locationState?.prefilled
+  const ddl = base.ddl
+  const parts = parseIsoToDdlParts(ddl)
+  if (prefilled) {
+    return {
+      form: {
         ...base,
         title: prefilled.title ?? '',
         description: prefilled.description ?? '',
         attachments,
-      }
-    return { ...base, attachments }
-  })
+        ddl,
+      },
+      ddlDate: parts.ddlDate,
+      useSpecificTime: parts.useSpecificTime,
+      timeStr: parts.timeStr,
+    }
+  }
+  return {
+    form: { ...base, attachments },
+    ddlDate: parts.ddlDate,
+    useSpecificTime: parts.useSpecificTime,
+    timeStr: parts.timeStr,
+  }
+}
 
+export default function CreateTodo() {
+  const { t } = useI18n()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { id: editId } = useParams<{ id: string }>()
+  const goals = getGoals()
+  const initial = buildInitialCreateTodo(editId, location.state as TodoCreateState | undefined)
+  const [form, setForm] = useState(initial.form)
+  const [ddlDate, setDdlDate] = useState(initial.ddlDate)
+  const [useSpecificTime, setUseSpecificTime] = useState(initial.useSpecificTime)
+  const [timeStr, setTimeStr] = useState(initial.timeStr)
+
+  useEffect(() => {
+    const iso = useSpecificTime ? localDateAndOptionalTimeToIso(ddlDate, timeStr) : localEndOfDayIsoFromDateStr(ddlDate)
+    setForm((f) => (f.ddl === iso ? f : { ...f, ddl: iso }))
+  }, [ddlDate, useSpecificTime, timeStr])
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -154,7 +196,7 @@ export default function CreateTodo() {
         ...existing,
         ...form,
         title,
-        ddl: form.ddl || now,
+        ddl: form.ddl || localEndOfDayIsoFromDateStr(localDateStrFromDate(new Date())),
         link: (form.link ?? '').trim() || undefined,
         subtasks: subtasks.filter((s) => s.title.trim() !== ''),
         hasSubEvents: (form.subtasks?.length ?? 0) > 0,
@@ -167,7 +209,7 @@ export default function CreateTodo() {
         id: crypto.randomUUID(),
         createdAt: now,
         title,
-        ddl: form.ddl || now,
+        ddl: form.ddl || localEndOfDayIsoFromDateStr(localDateStrFromDate(new Date())),
         link: (form.link ?? '').trim() || undefined,
         subtasks: subtasks.filter((s) => s.title.trim() !== ''),
         hasSubEvents: (form.subtasks?.length ?? 0) > 0,
@@ -196,15 +238,41 @@ export default function CreateTodo() {
             placeholder={t('createTodo.titlePlaceholder')}
           />
         </label>
-        <label className="field">
+        <div className="field">
           <span className="field-label">{t('createTodo.field.ddl')}</span>
-          <input
-            type="datetime-local"
-            className="input"
-            value={form.ddl ? isoToLocalDatetimeLocal(form.ddl) : ''}
-            onChange={(e) => set('ddl', e.target.value ? new Date(e.target.value).toISOString() : '')}
-          />
-        </label>
+          <div className="create-todo-ddl-row">
+            <input
+              type="date"
+              className="input create-todo-ddl-date"
+              value={ddlDate}
+              onChange={(e) => setDdlDate(e.target.value)}
+              required
+            />
+            <label className="create-todo-ddl-time-toggle">
+              <input
+                type="checkbox"
+                checked={useSpecificTime}
+                onChange={(e) => {
+                  const on = e.target.checked
+                  setUseSpecificTime(on)
+                  if (on) setTimeStr((s) => s || '09:00')
+                }}
+              />
+              <span>{t('createTodo.ddl.specificTime')}</span>
+            </label>
+          </div>
+          {useSpecificTime && (
+            <input
+              type="time"
+              className="input create-todo-ddl-time"
+              value={timeStr}
+              onChange={(e) => setTimeStr(e.target.value)}
+            />
+          )}
+          {!useSpecificTime && (
+            <p className="sub-hint create-todo-ddl-hint">{t('createTodo.ddl.endOfDayHint')}</p>
+          )}
+        </div>
         <div className="field">
           <span className="field-label">{t('reminder.todoLabel')}</span>
           <div className="reminder-todo-options">

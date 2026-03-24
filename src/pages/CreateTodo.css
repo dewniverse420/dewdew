@@ -46,6 +46,42 @@
   margin-top: 2px;
 }
 
+.create-todo-ddl-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.create-todo-ddl-date {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.create-todo-ddl-time-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.create-todo-ddl-time-toggle input {
+  width: 18px;
+  height: 18px;
+}
+
+.create-todo-ddl-time {
+  margin-top: 8px;
+  max-width: 140px;
+}
+
+.create-todo-ddl-hint {
+  margin-top: 6px;
+}
+
 .btn-subtask-trigger {
   width: 100%;
   text-align: left;
